@@ -1,0 +1,10 @@
+---according to wg-meta.schema.json
+attributes:
+  - name: name
+    mandatory: true
+  - name: created
+    mandatory: false
+  - name: description
+    mandatory: false
+  - name: alias
+    mandatory: false

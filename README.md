@@ -1,15 +1,19 @@
 # wg-meta
-An apporach to add metadata to the main wireguard config, written in Perl
+An approach to add metadata to the main wireguard config, written in Perl.
 
 ## Configuration
-There is only one config file: `wg-meta.contract` which defines the additional (meta-) attributes:
-```text
-# ATTRIBUTE,    IS_OPTIONAL
-name,           0,
-created,        0,
-description,    1,
-alias,          1,
-# And btw, comments are supported :)
+There is only one config file: `wg-meta.yaml` which defines the additional (meta-) attributes.:
+```yaml
+# according to wg-meta.schema.json
+attributes:
+  - name: name
+    mandatory: true
+  - name: created
+    mandatory: false
+  - name: description
+    mandatory: false
+  - name: alias
+    mandatory: false
 ```
 ## Usage
 Intended to use as command wrapper for the `wg show` and `wg set` commands from [wireguard-tools](https://manpages.debian.org/unstable/wireguard-tools/wg.8.en.html).
@@ -27,7 +31,7 @@ wg-meta set wg0 alias some_alias description "Some Desc"
 wg-meta set wg0 [alias|peer] +qz742hzxD3E5z5QF7VOvleVS1onavQpXBK3NdTh40g= allowed-ips 0.0.0.0/0
 ```
 ## Under the hood
-The main advantage is that this tool is not dependent on any other storage, meta data is stored inside the corresponding
+The main advantage is that this tool is not dependent on any other storage, metadata is stored inside the corresponding
 `wgXX.conf` file (Comments prefixed with `#-`):
 ```text
 [Interface]
