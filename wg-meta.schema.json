@@ -3,7 +3,6 @@
   "$id": "https://github.com/sirtoobii/wg-meta/wg-meta.schema.json",
   "definitions": {
     "custom_attribute": {
-      "additionalProperties": true,
       "type": "object",
       "properties": {
         "name": {
@@ -13,6 +12,11 @@
           "type": "boolean"
         }
       },
+      "patternProperties": {
+        "^x-": {
+        }
+      },
+      "additionalProperties": false,
       "required": [
         "name",
         "mandatory"
@@ -35,7 +39,7 @@
         }
       }
     },
-    "x-custom_attributes": {
+    "custom_attributes": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/custom_attribute"

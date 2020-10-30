@@ -10,7 +10,7 @@ default_attributes:
     mandatory: true
   alias:
     mandatory: true
-x-custom_attributes:
+custom_attributes:
 - name: some_custom_name
   mandatory: true
 - name: some_other_custom_attribute
