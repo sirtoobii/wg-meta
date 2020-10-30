@@ -5,15 +5,16 @@ An approach to add metadata to the main wireguard config, written in Perl.
 There is only one config file: `wg-meta.yaml` which defines the additional (meta-) attributes.:
 ```yaml
 # according to wg-meta.schema.json
-attributes:
-  - name: name
+default_attributes:
+  name:
     mandatory: true
-  - name: created
-    mandatory: false
-  - name: description
-    mandatory: false
-  - name: alias
-    mandatory: false
+  alias:
+    mandatory: true
+custom_attributes:
+- name: some_custom_name
+  mandatory: true
+- name: some_other_custom_attribute
+  mandatory: false
 ```
 ## Usage
 Intended to use as command wrapper for the `wg show` and `wg set` commands from [wireguard-tools](https://manpages.debian.org/unstable/wireguard-tools/wg.8.en.html).

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/sirtoobii/wg-meta/wg-meta.schema.json",
   "definitions": {
-    "attribute": {
+    "custom_attribute": {
       "type": "object",
       "properties": {
         "name": {
@@ -21,10 +21,22 @@
   "title": "wg-meta configuration",
   "type": "object",
   "properties": {
-    "attributes": {
+    "default_attributes": {
+      "name": {
+        "mandatory": {
+          "type": "boolean"
+        }
+      },
+      "alias": {
+        "mandatory": {
+          "type": "boolean"
+        }
+      }
+    },
+    "custom_attributes": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/attribute"
+        "$ref": "#/definitions/custom_attribute"
       }
     }
   }
