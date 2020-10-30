@@ -10,11 +10,15 @@ default_attributes:
     mandatory: true
   alias:
     mandatory: true
-custom_attributes:
+x-custom_attributes:
 - name: some_custom_name
   mandatory: true
 - name: some_other_custom_attribute
   mandatory: false
+- name: some_super_custom_attribute
+  mandatory: true
+  x-custom_property: true
+  x-an_other_custom_p: "Contents of this custom property" 
 ```
 ## Usage
 Intended to use as command wrapper for the `wg show` and `wg set` commands from [wireguard-tools](https://manpages.debian.org/unstable/wireguard-tools/wg.8.en.html).
