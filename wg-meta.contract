@@ -1,0 +1,6 @@
+# ATTRIBUTE,    IS_OPTIONAL
+name,           0,
+created,        0,
+description,    1,
+alias,          1,
+# And btw, comments are supported :)
