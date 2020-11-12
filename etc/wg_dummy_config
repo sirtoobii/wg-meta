@@ -1,0 +1,29 @@
+[Interface]
+Address = 10.0.0.2/24, fdc9:281f:04d7:9ee9::2/64
+ListenPort = 51902
+PrivateKey = PEER_B_PRIVATE_KEY
+
+[Peer]
+PublicKey = PEER_A_PUBLIC_KEY
+#+Alias = SomeSuperAlias1
+PresharedKey = PEER_A-PEER_B-PRESHARED_KEY
+AllowedIPs = 10.0.0.1/32, fdc9:281f:04d7:9ee9::1/128
+Endpoint = 198.51.100.101:51871
+
+[Peer]
+#Some other random comment at line 1
+#+Test = Hallo
+#+Alias = SomeSuperAlias1s
+#Some more commentary going on here at line 4
+PublicKey = PEER_C_PUBLIC_KEY
+PresharedKey = PEER_B-PEER_C-PRESHARED_KEY
+AllowedIPs = 10.0.0.3/32, fdc9:281f:04d7:9ee9::3/128
+
+[Peer]
+#+Test = Hallo
+#+Alias = SomeSuperAlias2s
+PublicKey = PEER_D_PUBLIC_KEY
+# And what we have here, a super long comment that took up
+# multiple lines (line 3,4)
+#~PresharedKey = PEER_B-PEER_C-PRESHARED_KEY
+AllowedIPs = 10.0.0.3/32, fdc9:281f:04d7:9ee9::3/128
