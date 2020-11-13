@@ -14,7 +14,8 @@ Endpoint = 198.51.100.101:51871
 #Some other random comment at line 1
 #+Test = Hallo
 #+Alias = SomeSuperAlias1s
-#Some more commentary going on here at line 4
+#+Disabled = 0
+#Some more commentary going on here at line 5
 PublicKey = PEER_C_PUBLIC_KEY
 PresharedKey = PEER_B-PEER_C-PRESHARED_KEY
 AllowedIPs = 10.0.0.3/32, fdc9:281f:04d7:9ee9::3/128
@@ -24,6 +25,6 @@ AllowedIPs = 10.0.0.3/32, fdc9:281f:04d7:9ee9::3/128
 #+Alias = SomeSuperAlias2s
 PublicKey = PEER_D_PUBLIC_KEY
 # And what we have here, a super long comment that took up
-# multiple lines (line 3,4)
-#~PresharedKey = PEER_B-PEER_C-PRESHARED_KEY
-AllowedIPs = 10.0.0.3/32, fdc9:281f:04d7:9ee9::3/128
+# multiple lines (line 4,5)
+PresharedKey = PEER_B-PEER_C-PRESHARED_KEY
+#AllowedIPs = 10.0.0.3/32, fdc9:281f:04d7:9ee9::3/128

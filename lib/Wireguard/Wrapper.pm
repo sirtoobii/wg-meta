@@ -3,7 +3,7 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 use base 'Exporter';
-our @EXPORT = qw(read_wg_config);
+our @EXPORT = qw(read_wg_config write_wg_config);
 use Data::Dumper;
 
 use constant FALSE => 0;
@@ -17,7 +17,7 @@ use constant IS_NORMAL => 3;
 
 
 
-sub read_wg_config($config_path, $comment_prefix, $comment_separator, $disabled_prefix, $ref_wg_meta_attrs) {
+sub read_wg_config($config_path, $wg_meta_prefix, $disabled_prefix, $ref_wg_meta_attrs) {
     # create file-handle
     open(my $fh, '<', $config_path) or die $!;
 
@@ -40,13 +40,11 @@ sub read_wg_config($config_path, $comment_prefix, $comment_separator, $disabled_
     my $alias;
     my $section_data = {};
     my @section_data_order;
+    my @section_order;
 
     while (my $line = readline($fh)) {
         my $is_line_disabled;
-        ($current_state, $is_line_disabled) = _decide_state($line, $comment_prefix, $disabled_prefix);
-
-        # set disabled section flag
-        if ($is_disabled == FALSE && $is_line_disabled == TRUE) {$is_disabled = TRUE};
+        $current_state = _decide_state($line, $wg_meta_prefix, $disabled_prefix);
 
         # remove disabled prefix if any
         $line =~ s/^$disabled_prefix//g;
@@ -64,7 +62,6 @@ sub read_wg_config($config_path, $comment_prefix, $comment_separator, $disabled_
                 }
                 else {
                     $STATE_READ_SECTION = TRUE;
-                    $section_type = $line;
 
                     if ($STATE_INIT_DONE == TRUE) {
                         # we are at the end of a section and therefore we can store the data
@@ -79,20 +76,22 @@ sub read_wg_config($config_path, $comment_prefix, $comment_separator, $disabled_
                             $STATE_EMPTY_SECTION = TRUE;
                             $parsed_wg_config->{$identifier} = $section_data;
                             # we have to use a copy of the array here.
-                            $parsed_wg_config->{$identifier}->{order} = [@section_data_order];
                             $parsed_wg_config->{$identifier}->{type} = $section_type;
-                            $parsed_wg_config->{$identifier}->{$comment_prefix."Disabled"} = $is_disabled;
+                            push @section_order, $identifier;
+                            $parsed_wg_config->{$identifier}->{order} = [@section_data_order];
 
                             # reset vars
                             $section_data = {};
                             $is_disabled = FALSE;
                             @section_data_order = ();
+                            $section_type = $line;
                             if ($STATE_READ_ALIAS == TRUE) {
                                 $alias_map{$alias} = $identifier;
                                 $STATE_READ_ALIAS = FALSE;
                             }
                         }
                     }
+                    $section_type = $line;
                     $STATE_INIT_DONE = TRUE;
                 }
             }
@@ -102,7 +101,7 @@ sub read_wg_config($config_path, $comment_prefix, $comment_separator, $disabled_
             }
         }
         elsif ($current_state == IS_COMMENT) {
-            my $comment_id ="comment".$comment_counter++;
+            my $comment_id ="comment_".$comment_counter++;
             push @section_data_order, $comment_id;
 
             $line =~ s/^\s+|\s+$//g;
@@ -112,8 +111,8 @@ sub read_wg_config($config_path, $comment_prefix, $comment_separator, $disabled_
             # a special wg-meta attribute
             if ($STATE_READ_SECTION == TRUE) {
                 $STATE_EMPTY_SECTION = FALSE;
-                my ($attr_name, $attr_value) = split_and_trim($line, $comment_separator);
-                if ($attr_name eq $comment_prefix . "Alias") {
+                my ($attr_name, $attr_value) = split_and_trim($line, "=");
+                if ($attr_name eq $wg_meta_prefix . "Alias") {
                     if (exists($alias_map{$attr_value})) {
                         close($fh);
                         die("Alias '$attr_value' already exists, aborting");
@@ -153,48 +152,50 @@ sub read_wg_config($config_path, $comment_prefix, $comment_separator, $disabled_
     }
     else {
         $parsed_wg_config->{$identifier} = $section_data;
-        $parsed_wg_config->{$identifier}->{order} = \@section_data_order;
         $parsed_wg_config->{$identifier}->{type} = $section_type;
-        $parsed_wg_config->{$identifier}->{$comment_prefix."Disabled"} = $is_disabled;
+
+        $parsed_wg_config->{$identifier}->{order} = \@section_data_order;
+        push @section_order, $identifier;
         if ($STATE_READ_ALIAS == TRUE) {
             $alias_map{$alias} = $identifier;
         }
     }
-    print Dumper(\%alias_map);
-    print Dumper($parsed_wg_config);
+    #print Dumper(\%alias_map);
+    #print Dumper(\@section_order);
+    #print Dumper($parsed_wg_config);
     close($fh);
+    return ($parsed_wg_config, \@section_order, \%alias_map);
 }
 
-sub _decide_state($line, $comment_prefix, $disabled_prefix, $is_disabled = FALSE) {
+sub _decide_state($line, $comment_prefix, $disabled_prefix) {
     #remove leading and tailing white space
     $line =~ s/^\s+|\s+$//g;
     if ($line eq "") {
-        return (IS_EMPTY, $is_disabled);
+        return IS_EMPTY;
     }
     # Is it the start of a section
     if (substr($line, 0, 1) eq "[") {
-        return (IS_SECTION, $is_disabled);
+        return IS_SECTION;
     }
     # is it a special wg-meta attribute
     if (substr($line, 0, length($comment_prefix)) eq $comment_prefix) {
-        return (IS_WG_META, $is_disabled);
+        return IS_WG_META;
     }
     # is it a deactivated line
     if (substr($line, 0, length($disabled_prefix)) eq $disabled_prefix) {
         $line =~ s/^$disabled_prefix//g;
         # lets do a little bit of recursion here ;)
-        return _decide_state($line, $comment_prefix, $disabled_prefix, TRUE);
+        return _decide_state($line, $comment_prefix, $disabled_prefix);
     }
     # Is it a normal comment
     if (substr($line, 0, 1) eq "#") {
-        return (IS_COMMENT, $is_disabled);
+        return IS_COMMENT;
     }
     # normal attribute
-    return (IS_NORMAL, $is_disabled);
+    return IS_NORMAL;
 }
 
 sub _is_valid_section($section) {
-    $section =~ s/^\s+|\s+$//g;
     my %valid_sections;
     @valid_sections{
         "Peer",
@@ -217,4 +218,35 @@ sub split_and_trim($line, $separator) {
     $values[0] =~ s/^\s+|\s+$//g;
     $values[1] =~ s/^\s+|\s+$//g;
     return @values;
+}
+
+sub write_wg_config($filename, $wg_meta_prefix, $disabled_prefix, $ref_parsed_config, $ref_section_order){
+    my $new_config =  "################################################\n";
+    $new_config .=    "## Generated by wg-meta, do not edit manually ##\n";
+    $new_config .=    "################################################\n\n";
+    for my $identifier (@{$ref_section_order}){
+        if (_is_disabled($ref_parsed_config->{$identifier}, $wg_meta_prefix."Disabled")){
+            $new_config .= $disabled_prefix;
+        }
+        # write down [section_type]
+        $new_config .= "[$ref_parsed_config->{$identifier}->{type}]\n";
+        for my $key (@{$ref_parsed_config->{$identifier}->{order}}){
+            if (_is_disabled($ref_parsed_config->{$identifier}, $wg_meta_prefix."Disabled")){
+                $new_config .= $disabled_prefix;
+            }
+            if (substr($key, 0, 7) eq 'comment'){
+                $new_config .= $ref_parsed_config->{$identifier}->{$key}."\n";
+            }else{
+                $new_config .= $key." = ". $ref_parsed_config->{$identifier}->{$key}."\n";
+            }
+        }
+        $new_config .= "\n";
+    }
+    print($new_config);
+}
+
+sub _is_disabled($ref_parsed_config_section, $key){
+    if (exists($ref_parsed_config_section->{$key})){
+        return $ref_parsed_config_section->{$key} == TRUE;
+    }
 }

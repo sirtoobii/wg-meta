@@ -20,10 +20,11 @@ use constant SCHEMA_FILE => "wg-meta.v1.schema.yaml";
 our $VERSION = 0.01;
 
 my $cnf = Config::Handler->new(WG_CONF_PATH . CONFIG_FILE);
-my $comment_prefix = $cnf->get_config_entry('comment-prefix');
+my $wg_meta_prefix = $cnf->get_config_entry('comment-prefix');
 my $disabled_prefix = $cnf->get_config_entry('disabled-prefix');
-my $comment_separator = $cnf->get_config_entry('separator');
 
-my $data = read_wg_config("/home/tobias/Documents/wg-meta/etc/wg_dummy_config", $comment_prefix, $comment_separator, $disabled_prefix, \$cnf);
+my ($parsed_config, $section_order, $alias_map) = read_wg_config("/home/tobias/Documents/wg-meta/etc/wg_dummy_config", $wg_meta_prefix, $disabled_prefix, \$cnf);
+
+write_wg_config("test.conf", $wg_meta_prefix, $disabled_prefix, $parsed_config, $section_order);
 
 

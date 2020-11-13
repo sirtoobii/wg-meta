@@ -16,5 +16,4 @@
       x-hidden: true
   config:
     comment-prefix: "#+"
-    separator: "="
     disabled-prefix: "#~"
