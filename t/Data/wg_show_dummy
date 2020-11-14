@@ -1,0 +1,22 @@
+interface: wg0
+  public key: dpzd845RRItYcmcEW3i+dqatmja18F2P9ujy+lAtsBM=
+  private key: (hidden)
+  listening port: 51888
+
+peer: PEER_C_PUBLIC_KEY
+  endpoint: 213.144.146.238:51820
+  allowed ips: 192.168.3.12/32
+  latest handshake: 1 minute, 38 seconds ago
+  transfer: 44.66 KiB received, 53.83 KiB sent
+
+peer: PEER_A_PUBLIC_KEY
+  allowed ips: 192.168.3.10/32
+
+peer: PEER_D_PUBLIC_KEY
+  endpoint: 213.144.146.238:51820
+  allowed ips: 192.168.3.12/32
+  latest handshake: 90 minutes, 1 second ago
+  transfer: 55.66 KiB received, 53.83 KiB sent
+
+peer: PEER_NOT_IN_PARSED_CONFIG
+  allowed ips: 192.168.3.13/32

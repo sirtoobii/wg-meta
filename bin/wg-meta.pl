@@ -23,7 +23,7 @@ my $cnf = Config::Handler->new(WG_CONF_PATH . CONFIG_FILE);
 my $wg_meta_prefix = $cnf->get_config_entry('comment-prefix');
 my $disabled_prefix = $cnf->get_config_entry('disabled-prefix');
 
-my ($parsed_config, $section_order, $alias_map) = read_wg_config("/home/tobias/Documents/wg-meta/etc/wg_dummy_config", $wg_meta_prefix, $disabled_prefix, \$cnf);
+my ($parsed_config, $section_order, $alias_map) = read_wg_config("/home/tobias/Documents/wg-meta/t/Data/wg_dummy_config", $wg_meta_prefix, $disabled_prefix);
 
 write_wg_config("test.conf", $wg_meta_prefix, $disabled_prefix, $parsed_config, $section_order);
 
