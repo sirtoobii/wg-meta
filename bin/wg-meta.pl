@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+use v5.22;
 use strict;
 use warnings;
 use FindBin;
@@ -23,8 +24,14 @@ my $cnf = Config::Handler->new(WG_CONF_PATH . CONFIG_FILE);
 my $wg_meta_prefix = $cnf->get_config_entry('comment-prefix');
 my $disabled_prefix = $cnf->get_config_entry('disabled-prefix');
 
-my ($parsed_config, $section_order, $alias_map) = read_wg_config("/home/tobias/Documents/wg-meta/t/Data/wg_dummy_config", $wg_meta_prefix, $disabled_prefix);
+my @file_list = ("/home/tobias/Documents/wg-meta/t/Data/wg0.conf","/home/tobias/Documents/wg-meta/t/Data/wg1.conf");
+my $parsed_configs = read_wg_configs(\@file_list, $wg_meta_prefix, $disabled_prefix);
 
-write_wg_config("test.conf", $wg_meta_prefix, $disabled_prefix, $parsed_config, $section_order);
+#print Dumper $parsed_configs;
+write_wg_config($wg_meta_prefix, $disabled_prefix, $parsed_configs);
+
+# open(FILE, "/home/tobias/Documents/wg-meta/t/Data/wg_show_dummy") or die "Error: no file found.";
+# my $output = do {local $/; <FILE> };
+# print Dumper read_wg_show($output);
 
 
