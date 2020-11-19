@@ -9,6 +9,7 @@ use Data::Dumper;
 
 use Config::Handler;
 use Wireguard::Wrapper;
+use wg_meta::Commands;
 
 use constant FALSE => 0;
 use constant TRUE => 1;
@@ -27,11 +28,16 @@ my $disabled_prefix = $cnf->get_config_entry('disabled-prefix');
 my @file_list = ("/home/tobias/Documents/wg-meta/t/Data/wg0.conf","/home/tobias/Documents/wg-meta/t/Data/wg1.conf");
 my $parsed_configs = read_wg_configs(\@file_list, $wg_meta_prefix, $disabled_prefix);
 
-#print Dumper $parsed_configs;
-write_wg_config($wg_meta_prefix, $disabled_prefix, $parsed_configs);
 
-# open(FILE, "/home/tobias/Documents/wg-meta/t/Data/wg_show_dummy") or die "Error: no file found.";
-# my $output = do {local $/; <FILE> };
-# print Dumper read_wg_show($output);
+#write_wg_config($wg_meta_prefix, $disabled_prefix, $parsed_configs);
+
+open(FILE, "/home/tobias/Documents/wg-meta/t/Data/wg_show_dump") or die "Error: no file found.";
+my $output = do {local $/; <FILE> };
+my $parsed_show =  wg_show_dump_parser($output);
+
+
+print command_show($wg_meta_prefix, $parsed_configs, $parsed_show);
+
+
 
 
