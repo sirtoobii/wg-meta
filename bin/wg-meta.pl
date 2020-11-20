@@ -6,6 +6,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../thirdparty/lib/perl5";
 use Data::Dumper;
+use Time::HiRes qw(gettimeofday);
 
 use Config::Handler;
 use Wireguard::Wrapper;
@@ -20,7 +21,7 @@ use constant CONFIG_FILE => "wg-meta.yaml";
 use constant SCHEMA_FILE => "wg-meta.v1.schema.yaml";
 
 our $VERSION = 0.01;
-
+my $start = gettimeofday();
 my $cnf = Config::Handler->new(WG_CONF_PATH . CONFIG_FILE);
 my $wg_meta_prefix = $cnf->get_config_entry('comment-prefix');
 my $disabled_prefix = $cnf->get_config_entry('disabled-prefix');
@@ -35,8 +36,11 @@ open(FILE, "/home/tobias/Documents/wg-meta/t/Data/wg_show_dump") or die "Error: 
 my $output = do {local $/; <FILE> };
 my $parsed_show =  wg_show_dump_parser($output);
 
+print command_show($wg_meta_prefix, $parsed_configs, $parsed_show, TRUE);
 
-print command_show($wg_meta_prefix, $parsed_configs, $parsed_show);
+# do we actually get milliseconds like this? :D
+my $duration = (gettimeofday() - $start)*1000;
+print "Execution time: $duration ms\n";
 
 
 
