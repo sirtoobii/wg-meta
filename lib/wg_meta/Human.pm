@@ -12,8 +12,15 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 use base 'Exporter';
-our @EXPORT = qw(bits2human id timestamp2human);
+our @EXPORT = qw(disabled2Human bits2human id timestamp2human);
 
+
+sub disabled2Human($state) {
+    if ($state == 1) {
+        return "yes";
+    }
+    return "no";
+}
 
 =head3 bits2human($n_bits)
 
@@ -60,6 +67,9 @@ A string describing how long ago this timestamp was
 =cut
 sub timestamp2human($timestamp) {
     my $int_timestamp = int($timestamp);
+    if ($int_timestamp == 0) {
+        return "never"
+    }
     my $delta = time - $int_timestamp;
     if ($delta > 2592000) {
         return ">month ago";

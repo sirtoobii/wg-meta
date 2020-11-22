@@ -1,10 +1,9 @@
 # Functional
-- Commandline arg support
-- Help page
 - Command to set attribute (very inefficient though -> read config -> set arg -> write config for each attr)
 - Command to apply config
-- Forwarding to the original `wg show`? -> is this actually expected by the user?
+- Forwarding to the original `wg`? -> is this actually expected by the user?
 # Internal
+- actually get `wg show dump` output from terminal
 - Documentation (user and dev)
 - According to [Wireguard config example](https://manpages.debian.org/unstable/wireguard-tools/wg.8.en.html), it is possible to have
 no newline after an attribute - is this actually a thing in "the wild"?

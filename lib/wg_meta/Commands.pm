@@ -63,7 +63,7 @@ sub command_show($wg_meta_prefix, $ref_parsed_config, $ref_parsed_show, $human_r
             len   => 14
         },
         $wg_meta_prefix . 'Disabled' => {
-            human_readable => \&id,
+            human_readable => \&disabled2Human,
             dest  => WG_CONFIG,
             len   => 15
         }

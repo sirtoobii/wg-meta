@@ -28,7 +28,6 @@ sub read_wg_configs($ref_config_paths, $wg_meta_prefix, $disabled_prefix) {
         # read interface name
         my $i_name = basename($config_path);
         $i_name =~ s/\.conf//g;
-
         open(my $fh, '<', $config_path) or die $!;
 
         my %alias_map;
@@ -189,8 +188,6 @@ sub read_wg_configs($ref_config_paths, $wg_meta_prefix, $disabled_prefix) {
     }
     return ($parsed_wg_config);
 }
-
-
 
 sub _decide_state($line, $comment_prefix, $disabled_prefix) {
 
