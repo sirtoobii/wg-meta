@@ -1,0 +1,10 @@
+.idea
+*.in
+autom4te.cache
+_Deparsed_XSubs.pm
+*.log
+*.status
+Makefile
+*.tar.gz
+thirdparty/bin
+test.pl
