@@ -7,7 +7,7 @@ A small collection of utility functions to convert machine-readable out to human
 =head1 METHODS
 
 =cut
-package wg_meta::Human;
+package WGmeta::Cli::Human;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';

@@ -1,9 +1,9 @@
-package wg_meta::Utils;
+package WGmeta::Utils;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 use base 'Exporter';
-our @EXPORT = qw(read_dir);
+our @EXPORT = qw(read_dir read_file);
 
 
 sub read_dir($path, $pattern) {
@@ -17,6 +17,15 @@ sub read_dir($path, $pattern) {
     }
     closedir(DIR);
     return @files;
+}
+
+sub read_file($path) {
+    open my $fh, '<', $path or die "Can't open file $!";
+    my $file_content = do {
+        local $/;
+        <$fh>
+    };
+    return $file_content;
 }
 
 1;

@@ -12,3 +12,6 @@ wg1	WG_1_PEER_D_PUBLIC_KEY	(none)	(none)	192.168.4.12/32	0	0	0	off
 wg1	WG_1_PEER_A_PUBLIC_KEY	(none)	(none)	192.168.4.13/32	0	0	0	off
 wg1	DtGrNBijn+o91/tTNBx9EbDqC0552tuzruY14Ii5mi4=	(none)	(none)	192.168.4.14/32	0	0	0	off
 wg1	TolTfLzAXEj7u/gpWEFk4wzNA0OGtc2TruUNwKP5nlc=	(none)	(none)	192.168.4.15/32	0	0	0	off
+wg2	WG_1_PEER_A_PUBLIC_KEY	(none)	(none)	192.168.4.13/32	0	0	0	off
+wg2	DtGrNBijn+o91/tTNBx9EbDqC0552tuzruY14Ii5mi4=	(none)	(none)	192.168.4.14/32	0	0	0	off
+wg2	TolTfLzAXEj7u/gpWEFk4wzNA0OGtc2TruUNwKP5nlc=	(none)	(none)	192.168.4.15/32	0	0	0	off

@@ -7,4 +7,4 @@ _Deparsed_XSubs.pm
 Makefile
 *.tar.gz
 thirdparty/bin
-test.pl
+lib/WGmeta/Config/test.pm
