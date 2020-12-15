@@ -13,7 +13,8 @@ Wrapper class around the wireguard configuration files
 =head1 DESCRIPTION
 
 This class serves as wrapper around the Wireguard configurations files.
-It is able to parse, modify, add and write Wireguard .conf files. In addition, support for metadata is built in.
+It is able to parse, modify, add and write Wireguard .conf files. In addition, support for metadata is built in. As a small
+bonus, the parser and encoder are exported ar usable as standalone methods
 
 =head1 EXAMPLES
 
@@ -1018,7 +1019,6 @@ B<Returns>
 The private-key of the interface
 
 =cut
-
 sub add_peer($self, $interface, $name, $ip_address, $public_key, $alias = undef, $preshared_key = undef) {
     # generate new key pair if not defined
     if ($self->_is_valid_interface($interface)) {
@@ -1071,7 +1071,6 @@ sub _add_to_hash_if_defined($ref_hash, $key, $value) {
 Simple dumper method to print contents of C<< $self->{parsed_config} >>.
 
 =cut
-
 sub dump($self) {
     print Dumper $self->{parsed_config};
 }

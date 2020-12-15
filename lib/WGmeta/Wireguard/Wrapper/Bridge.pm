@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use experimental 'signatures';
 
 use base 'Exporter';
-our @EXPORT = qw(gen_keypair);
+our @EXPORT = qw(gen_keypair get_wg_show);
 
 use Symbol 'gensym';
 use IPC::Open3;
@@ -29,6 +29,26 @@ sub gen_keypair() {
     return $out[0], $out[1];
 }
 
+=head3 get_wg_show()
+
+Runs C<wg show dump> and captures the output into str_out and str_err.
+
+B<Raises>
+
+Please refer to L</run_external($command_line [, $soft_fail])>
+
+B<Returns>
+
+First string std_out, second std_err
+
+=cut
+sub get_wg_show(){
+    my $cmd = 'wg show dump';
+    my (@out, undef) = run_external($cmd);
+    chomp @out;
+    return $out[0], $out[1];
+}
+
 =head3 run_external($command_line [, $soft_fail])
 
 Runs an external program and throws an exception (or a warning if C<$soft_fail> is true) if the return code is != 0
@@ -46,6 +66,10 @@ C<$command_line> Complete commandline for the external program to execute.
 C<[, $soft_fail]> If set to true, a warning is thrown instead of an exception
 
 =back
+
+B<Raises>
+
+Exception if return code is not 0 (if C<$soft_fail> is set to true, just a warning)
 
 B<Returns>
 

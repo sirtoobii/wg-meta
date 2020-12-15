@@ -9,6 +9,7 @@ our @EXPORT = qw(command_show);
 use WGmeta::Cli::Human;
 use WGmeta::Wireguard::Wrapper::Config;
 use WGmeta::Wireguard::Wrapper::Show;
+use WGmeta::Utils;
 
 use constant TRUE => 1;
 use constant FALSE => 0;
@@ -18,7 +19,8 @@ use constant WG_SHOW => 2;
 
 sub command_show($interface = undef, $human_readable = TRUE, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-') {
     my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new('/home/tobias/Documents/wg-meta/t/Data/', $wg_meta_prefix, $wg_meta_disabled_prefix);
-    my $wg_show = WGmeta::Wireguard::Wrapper::Show->new();
+    my ($out) = read_file('/home/tobias/Documents/wg-meta/t/Data/wg_show_dump');
+    my $wg_show = WGmeta::Wireguard::Wrapper::Show->new($out);
 
     my $spacer = "\t";
     if ($human_readable == TRUE) {
