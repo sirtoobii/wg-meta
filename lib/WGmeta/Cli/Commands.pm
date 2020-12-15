@@ -16,7 +16,7 @@ use constant FALSE => 0;
 use constant WG_CONFIG => 1;
 use constant WG_SHOW => 2;
 
-
+#@deprecated
 sub command_show($interface = undef, $human_readable = TRUE, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-') {
     my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new('/home/tobias/Documents/wg-meta/t/Data/', $wg_meta_prefix, $wg_meta_disabled_prefix);
     my ($out) = read_file('/home/tobias/Documents/wg-meta/t/Data/wg_show_dump');

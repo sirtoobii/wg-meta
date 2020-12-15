@@ -7,7 +7,7 @@ Class for parsing the output of C<wg show dump>.
 =head1 SYNOPSIS
 
  use WGmeta::Wireguard::Wrapper::Show;
- my $wg-show = WGmeta::Wireguard::Wrapper::Show->new(<wg show dump output as string>);
+ my $wg_show = WGmeta::Wireguard::Wrapper::Show->new(<wg show dump output as string>);
 
 
 =head1 DESCRIPTION

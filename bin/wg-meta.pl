@@ -7,7 +7,7 @@ use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../thirdparty/lib/perl5";
 use experimental 'signatures';
 
-use WGmeta::Cli::Commands;
+use WGmeta::Cli::Router;
 
 use constant FALSE => 0;
 use constant TRUE => 1;
@@ -20,26 +20,8 @@ use constant SCHEMA_FILE => "wg-meta.v1.schema.yaml";
 our $VERSION = 0.01;
 
 # command line argument parser
-my $command_line = join('_', @ARGV);
-if ($command_line eq 'show' | $command_line eq 'show_all') {
-    print command_show();
 
-}
-elsif ($command_line eq 'show_dump' | $command_line eq 'show_all_dump') {
-    print command_show(undef, FALSE);
-
-}
-elsif ($command_line =~ /show\_\w+/) {
-    my (undef, $interface) = split(/\_/, $command_line);
-    print command_show($interface);
-
-}
-elsif ($command_line eq 'help') {
-    help();
-}
-else {
-    help();
-}
+route_command(\@ARGV);
 
 sub help() {
     print "wg-meta - An approach to add meta data to the Wireguard configuration\n";

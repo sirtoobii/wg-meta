@@ -7,7 +7,7 @@ Wrapper class around the wireguard configuration files
 =head1 SYNOPSIS
 
  use WGmeta::Wireguard::Wrapper::Config;
- my $wg-meta = WGmeta::Wireguard::Wrapper::Config->new('<path to wireguard configuration>');
+ my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new('<path to wireguard configuration>');
 
 
 =head1 DESCRIPTION
@@ -293,7 +293,7 @@ sub _toggle($self, $interface, $identifier, $enable) {
 # internal forward method, as for now, this is just a stub
 sub _forward($interface, $identifier, $attribute, $value) {
     # this is just as stub
-    print("Forwarded to wg original wg command");
+    print("Forwarded to wg original wg command: `$attribute = $value`");
 }
 
 # internal method to decide if an attribute is a wg-meta attribute
