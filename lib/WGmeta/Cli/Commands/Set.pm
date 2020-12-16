@@ -8,6 +8,8 @@ use WGmeta::Wireguard::Wrapper::Config;
 our @ISA = qw(WGmeta::Cli::Commands::Command);
 
 use constant WIREGUARD_HOME => '/home/tobias/Documents/wg-meta/t/Data/';
+use constant TRUE => 1;
+use constant FALSE => 0;
 
 sub new($class, @input_arguments) {
     my $self = $class->SUPER::new(@input_arguments);
@@ -67,6 +69,12 @@ sub _apply_change_set($self, $interface, @change_set) {
     if ($self->_retrieve_or_die(\@change_set, 1) eq 'peer') {
         # this could be either a public key or alias
         $identifier = $self->_retrieve_or_die(\@change_set, 2);
+
+        # try to resolve alias
+        eval {
+            $identifier = $self->{wg_meta}->translate_alias($interface, $identifier);
+        };
+
         $offset += 2;
     }
     else {
@@ -99,6 +107,11 @@ sub cmd_help($self) {
 
 sub _set_values($self, $interface, $identifier, $ref_hash_values) {
     for my $key (keys %{$ref_hash_values}) {
-        $self->{wg_meta}->set($interface, $identifier, $key, $ref_hash_values->{$key});
+        $self->{wg_meta}->set($interface, $identifier, $key, $ref_hash_values->{$key}, TRUE, \&_forward);
     }
+}
+
+sub _forward($interface, $identifier, $attribute, $value) {
+    # this is just as stub
+    print("Forwarded to original wg command: `$attribute = $value`");
 }

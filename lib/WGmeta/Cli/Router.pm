@@ -31,6 +31,9 @@ None
 =cut
 sub route_command($ref_list_input_args) {
     my @cmd_args = @{$ref_list_input_args};
+    if (!@cmd_args){
+        WGmeta::Cli::Commands::Help->new(splice @cmd_args, 1)->entry_point();
+    }
     if (lc $cmd_args[0] eq 'show') {
         WGmeta::Cli::Commands::Show->new(splice @cmd_args, 1)->entry_point();
     }

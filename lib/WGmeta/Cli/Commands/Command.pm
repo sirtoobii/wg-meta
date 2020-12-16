@@ -3,9 +3,6 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
-use base 'Exporter';
-our @EXPORT = qw(entry_point);
-
 
 sub new($class, @input_arguments) {
     my $self = {

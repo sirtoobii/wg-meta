@@ -9,25 +9,23 @@ use experimental 'signatures';
 
 use WGmeta::Cli::Router;
 
-use constant FALSE => 0;
-use constant TRUE => 1;
-
-use constant WG_META_CONF_PATH => "/home/tobias/Documents/wg-meta/etc/";
-use constant WG_CONF_PATH => "/home/tobias/Documents/wg-meta/t/Data/";
-use constant CONFIG_FILE => "wg-meta.yaml";
-use constant SCHEMA_FILE => "wg-meta.v1.schema.yaml";
-
 our $VERSION = 0.01;
 
+eval {
+    if (@ARGV && $ARGV[0] eq '--version') {
+        print "wg-meta v$VERSION - https://github.com/sirtoobii/wg-meta\n";
+        exit;
+    }
 
-if ($ARGV[0] eq '--version') {
-    print "wg-meta v$VERSION - https://github.com/sirtoobii/wg-meta\n";
-    exit();
+
+    # command line argument parser
+    route_command(\@ARGV);
+} or die_with_error();
+
+sub die_with_error(){
+    print "Terminated with error: $@";
+    exit -1;
 }
-
-# command line argument parser
-route_command(\@ARGV);
-
 
 
 

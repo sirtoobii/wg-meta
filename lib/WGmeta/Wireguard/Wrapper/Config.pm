@@ -47,6 +47,7 @@ use Data::Dumper;
 use Time::Piece;
 use File::Basename;
 use WGmeta::Wireguard::Wrapper::Bridge;
+use WGmeta::Constants;
 use Digest::MD5 qw(md5);
 
 use base 'Exporter';
@@ -99,11 +100,7 @@ An instance of Wrapper::Config
 
 =cut
 sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-', $ref_hash_additional_attrs = undef) {
-    my %default_attrs = (
-        'Name'     => undef,
-        'Alias'    => undef,
-        'Disabled' => undef
-    );
+    my %default_attrs = WGmeta::Constants::WG_META_DEFAULT;
     if (defined $ref_hash_additional_attrs) {
         map {$default_attrs{$_} = undef} keys %{$ref_hash_additional_attrs};
     }
@@ -151,8 +148,13 @@ C<$attribute> Attribute name (Case does not not matter)
 
 =item *
 
-C<[, $allow_non_meta = FALSE]> If set to TRUE, non wg-meta attributes are not forwarded to `wg set`.
-However be extra careful when using this, there is no validation!
+C<[$allow_non_meta = FALSE]> If set to TRUE, non wg-meta attributes are not forwarded to `wg set`.
+However be extra careful when using this, just the attribute names are validated but not the data!
+
+=item *
+
+C<[$forward_function = undef]> A reference to a callback function when C<$allow_non_meta = TRUE>. The following signature
+is expected: C<forward_fun($interface, $identifier, $attribute, $value)>
 
 =back
 
@@ -165,7 +167,7 @@ B<Returns>
 None
 
 =cut
-sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FALSE) {
+sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FALSE, $forward_function = undef) {
     $attribute = ucfirst $attribute;
     if ($self->_is_valid_interface($interface)) {
         if ($self->_is_valid_identifier($interface, $identifier)) {
@@ -180,16 +182,26 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
             }
             else {
                 if ($allow_non_meta == TRUE) {
-                    unless (exists $self->{parsed_config}{$interface}{$identifier}{$attribute}) {
-                        # the attribute does not (yet) exist in the configuration, lets add it to the list
-                        push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $attribute;
+                    if (_validate_non_meta($interface, $identifier, $attribute)) {
+                        unless (exists $self->{parsed_config}{$interface}{$identifier}{$attribute}) {
+                            # the attribute does not (yet) exist in the configuration, lets add it to the list
+                            push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $attribute;
+                        }
+                        # the attribute does already exist and therefore we just set it to the new value
+                        $self->{parsed_config}{$interface}{$identifier}{$attribute} = $value;
+                        $self->{has_changed} = TRUE;
                     }
-                    # the attribute does already exist and therefore we just set it to the new value
-                    $self->{parsed_config}{$interface}{$identifier}{$attribute} = $value;
-                    $self->{has_changed} = TRUE;
+                    else {
+                        die "The supplied attribute `$attribute` is neither a valid wg nor wg-quick name";
+                    }
                 }
                 else {
-                    _forward($interface, $identifier, $attribute, $value)
+                    if (defined($forward_function)) {
+                        &{$forward_function}($interface, $identifier, $attribute, $value);
+                    }
+                    else {
+                        die 'No forward function defined';
+                    }
                 }
             }
         }
@@ -201,6 +213,19 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
         die "Invalid interface name `$interface`";
     }
 
+}
+
+sub _validate_non_meta($interface, $identifier, $attr_name) {
+    # if we have an interface
+    my %wg_orig_interface = WGmeta::Constants::WG_ORIG_INTERFACE;
+    my %wg_orig_peer = WGmeta::Constants::WG_ORIG_PEER;
+    my %wg_quick = WGmeta::Constants::WG_QUICK;
+    if ($interface eq $identifier) {
+        return exists($wg_orig_interface{lc $attr_name}) || exists( $wg_quick{$attr_name});
+    }
+    else {
+        return exists($wg_orig_peer{lc $attr_name});
+    }
 }
 
 =head3 set_by_alias($interface, $alias, $attribute, $value)
@@ -290,11 +315,6 @@ sub _toggle($self, $interface, $identifier, $enable) {
     $self->set($interface, $identifier, 'Disabled', $enable);
 }
 
-# internal forward method, as for now, this is just a stub
-sub _forward($interface, $identifier, $attribute, $value) {
-    # this is just as stub
-    print("Forwarded to wg original wg command: `$attribute = $value`");
-}
 
 # internal method to decide if an attribute is a wg-meta attribute
 sub _decide_attr_type($self, $attr_name) {
@@ -783,7 +803,7 @@ B<Parameters>
 =item
 
 C<[$is_hot_config = FALSE])> If set to TRUE, the existing configuration is overwritten. Otherwise,
-the suffix '_dryrun' is appended to the filename
+the suffix '_not_applied' is appended to the filename
 
 =back
 
@@ -804,7 +824,7 @@ sub commit($self, $is_hot_config = FALSE) {
             open $fh, '>', $self->{wireguard_home} . $interface . '.conf' or die $!;
         }
         else {
-            open $fh, '>', $self->{wireguard_home} . $interface . '.conf_dryrun' or die $!;
+            open $fh, '>', $self->{wireguard_home} . $interface . '.conf_not_applied' or die $!;
         }
         # write down to file
         print $fh $new_config;
