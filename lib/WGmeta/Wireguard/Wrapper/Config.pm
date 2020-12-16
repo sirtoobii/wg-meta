@@ -637,32 +637,20 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
 
 # internal method to decide that current state using a line of input
 sub _decide_state($line, $comment_prefix, $disabled_prefix) {
-
     #remove leading and tailing white space
     $line =~ s/^\s+|\s+$//g;
-    if ($line eq "") {
-        return IS_EMPTY;
+    for ($line) {
+        /^$/ && return IS_EMPTY;
+        /^\[/ && return IS_SECTION;
+        /^\Q${comment_prefix}/ && return IS_WG_META;
+        /^\Q${disabled_prefix}/ && do {
+            $line =~ s/^$disabled_prefix//g;
+            # lets do a little bit of recursion here ;)
+            return _decide_state($line, $comment_prefix, $disabled_prefix);
+        };
+        /^#/ && return IS_COMMENT;
+        return IS_NORMAL;
     }
-    # Is it the start of a section
-    if (substr($line, 0, 1) eq "[") {
-        return IS_SECTION;
-    }
-    # is it a special wg-meta attribute
-    if (substr($line, 0, length $comment_prefix) eq $comment_prefix) {
-        return IS_WG_META;
-    }
-    # is it a deactivated line
-    if (substr($line, 0, length $disabled_prefix) eq $disabled_prefix) {
-        $line =~ s/^$disabled_prefix//g;
-        # lets do a little bit of recursion here ;)
-        return _decide_state($line, $comment_prefix, $disabled_prefix);
-    }
-    # Is it a normal comment
-    if (substr($line, 0, 1) eq "#") {
-        return IS_COMMENT;
-    }
-    # normal attribute
-    return IS_NORMAL;
 }
 
 # internal method to whether a section has a valid type

@@ -29,7 +29,7 @@ sub gen_keypair() {
     return $out[0], $out[1];
 }
 
-=head3 get_wg_show()
+=head3 get_wg_show([$cmd])
 
 Runs C<wg show dump> and captures the output into str_out and str_err.
 
@@ -42,8 +42,10 @@ B<Returns>
 First string std_out, second std_err
 
 =cut
-sub get_wg_show(){
-    my $cmd = 'wg show dump';
+sub get_wg_show($cmd = undef) {
+    unless (defined($cmd)) {
+        $cmd = 'wg show dump';
+    }
     my (@out, undef) = run_external($cmd);
     chomp @out;
     return $out[0], $out[1];

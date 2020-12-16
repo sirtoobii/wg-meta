@@ -12,23 +12,33 @@ use constant WIREGUARD_HOME => '/home/tobias/Documents/wg-meta/t/Data/';
 sub new($class, @input_arguments) {
     my $self = $class->SUPER::new(@input_arguments);
 
-    my $wg_home;
-    # check if env var is available
-    if (defined($ENV{'WIREGUARD_HOME'})) {
-        $wg_home = $ENV{'WIREGUARD_HOME'};
-    }
-    else {
-        $wg_home = WIREGUARD_HOME;
-    }
-
-    $self->{'wg_meta'} = WGmeta::Wireguard::Wrapper::Config->new($wg_home);
-
     bless $self, $class;
 
     return $self;
 }
 
 sub entry_point($self) {
+    if ($self->_retrieve_or_die($self->{input_args}, 0) eq 'help') {
+        $self->cmd_help();
+        return
+    }
+    else {
+        my $wg_home;
+        # check if env var is available
+        if (defined($ENV{'WIREGUARD_HOME'})) {
+            $wg_home = $ENV{'WIREGUARD_HOME'};
+        }
+        else {
+            $wg_home = WIREGUARD_HOME;
+        }
+
+        # would be very nice if we can set a type hint here...possible?
+        $self->{'wg_meta'} = WGmeta::Wireguard::Wrapper::Config->new($wg_home);
+        $self->_run_command();
+    }
+}
+
+sub _run_command($self) {
     my $interface = $self->_retrieve_or_die($self->{input_args}, 0);
     my $offset = -1;
     my $cur_start = 0;
@@ -83,7 +93,9 @@ sub _apply_change_set($self, $interface, @change_set) {
 
     $self->_set_values($interface, $identifier, \%args);
 }
-sub cmd_help($self) {}
+sub cmd_help($self) {
+    print "Usage: wg-meta set <interface> [attr1 value1] [attr2 value2] [peer {alias|public-key}] [attr1 value1] [attr2 value2] ...\n"
+}
 
 sub _set_values($self, $interface, $identifier, $ref_hash_values) {
     for my $key (keys %{$ref_hash_values}) {

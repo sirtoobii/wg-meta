@@ -4,31 +4,11 @@ An approach to add metadata to the main wireguard config, written in Perl.
 ## Installation
 This project supports automake
 ```shell script
-./bootstrap
 ./configure
 make install
 ```
 ## Configuration
-There is only one config file: `wg-meta.yaml` which defines the additional (meta-) attributes.:
-```yaml
----
-# according to wg-meta.v1.schema.json
-  attributes:
-    Name:
-      mandatory: true
-    Description:
-      mandatory: false
-    Alias:
-      mandatory: false
-    Created:
-      mandatory: false
-    X-Custom:
-      mandatory: false
-      x-hidden: true
-  config:
-    comment-prefix: "#-"
-    separator: "="
-```
+
 ## Usage
 Intended to use as command wrapper for the `wg show` and `wg set` commands from [wireguard-tools](https://manpages.debian.org/unstable/wireguard-tools/wg.8.en.html).
 ```bash

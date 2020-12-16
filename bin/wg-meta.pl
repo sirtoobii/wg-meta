@@ -19,18 +19,14 @@ use constant SCHEMA_FILE => "wg-meta.v1.schema.yaml";
 
 our $VERSION = 0.01;
 
-# command line argument parser
 
-route_command(\@ARGV);
-
-sub help() {
-    print "wg-meta - An approach to add meta data to the Wireguard configuration\n";
-    print "Version: " . $VERSION . "\n\n";
-    print "Usage: wg-meta <cmd> [<args>]\n";
-    print "Available subcommands:\n";
-    print "\t show: [interface|all] [dump]  Shows the current configuration paired with available metadata, when specifying dump, the output is TAB separated";
+if ($ARGV[0] eq '--version') {
+    print "wg-meta v$VERSION - https://github.com/sirtoobii/wg-meta\n";
     exit();
 }
+
+# command line argument parser
+route_command(\@ARGV);
 
 
 

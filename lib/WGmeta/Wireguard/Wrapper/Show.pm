@@ -14,7 +14,7 @@ Class for parsing the output of C<wg show dump>.
 
 This class contains a parser for the output of C<wg show dump> together with an interface to retrieve the parsed data.
 An important note tough: This class does not perform the necessary I/O by itself and therefore the actual output of the command
-C<wg show dump> has to be captured into a string externally (e.g using L<WGmeta::Wireguard::Wrapper::Bridge/get_wg_show()>).
+C<wg show dump> has to be captured into a string externally (e.g using L<WGmeta::Wireguard::Wrapper::Bridge/get_wg_show([$cmd])>).
 
 
 =head1 EXAMPLES

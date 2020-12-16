@@ -11,9 +11,7 @@ sub new($class, @input_arguments) {
     my $self = {
         'input_args' => \@input_arguments
     };
-
     bless $self, $class;
-
     return $self;
 }
 
@@ -21,7 +19,7 @@ sub entry_point($self) {
     die 'Please instantiate the actual implementation';
 }
 
-sub cmd_help() {
+sub cmd_help($self) {
     die 'Please instantiate the actual implementation';
 }
 

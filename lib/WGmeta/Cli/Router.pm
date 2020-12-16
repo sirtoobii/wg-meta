@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use experimental 'signatures';
 use WGmeta::Cli::Commands::Show;
 use WGmeta::Cli::Commands::Set;
-#use WGmeta::Cli::Commands::Help;
+use WGmeta::Cli::Commands::Help;
 
 use base 'Exporter';
 our @EXPORT = qw(route_command);
