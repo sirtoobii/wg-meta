@@ -42,6 +42,8 @@ Endpoint = 198.51.100.101:60001
 #+Name = Name_by_test1
 
 ';
+
+# normal attributes (mixed type)
 $wg_meta->set('mini_wg0', 'mini_wg0', 'listen-port', 60000, 1);
 $wg_meta->set('mini_wg0', 'mini_wg0', 'private-key', 'OHLK9lBHFqnu+9olAnyUN11pCeKP4uW6fwMAeRSy2F8=', 1);
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'endpoint', '198.51.100.101:60001', 1);
@@ -50,5 +52,44 @@ $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'Name_by_test1');
 my $actual = $wg_meta->_create_config('mini_wg0', 1);
 ok $actual eq $expected, 'set valid attrs';
 
+# forwarder test
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 12345, 0, \&_forward);
+sub _forward($interface, $identifier, $attribute, $value) {
+    ok $interface eq 'mini_wg0' && $identifier eq 'WG_0_PEER_A_PUBLIC_KEY' && $attribute eq 'listen-port' && $value == 12345, 'set forward_fun';
+}
+
+# no forwarder test
+does_throw('no-meta w/o forwarder', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 12345, 0));
+
+# invalid attr name
+does_throw('invalid attr name', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'invalid_name', 12345, 1));
+
+# try to set a non peer attribute on a peer
+does_throw('non peer attribute on peer', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 5000, 1));
+
+# try to set a non interface attribute on a interface
+does_throw('non interface attribute on interface', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'allowed-ips', '10.0.0.0/32', 1));
+
+# # data validation errors (uncomment if we eventually implement attribute value validation...)
+# does_throw('listen-port nan', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'listen-port', 'not_a_number', 1));
+# does_throw('private-key too short', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'private-key', 'key_to_short', 1));
+# does_throw('private-key invalid chars', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'private-key', 'key invalid chars', 1));
+# does_throw('address invalid', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'address', 'invalid_address', 1));
+
+
 done_testing();
+
+
+# helper methods
+sub set_wrapper(@args) {
+    $wg_meta->set(@args);
+}
+
+sub does_throw($test_name, $fun, @args) {
+    my $ok = 0;
+    eval {
+        &{$fun}(@args);
+    } or $ok = 1;
+    ok $ok, $test_name;
+}
 

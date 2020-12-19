@@ -1,4 +1,4 @@
-package WGmeta::Constants;
+package WGmeta::ValidAttributes;
 use strict;
 use warnings FATAL => 'all';
 

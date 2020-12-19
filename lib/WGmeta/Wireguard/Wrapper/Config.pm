@@ -47,7 +47,7 @@ use Data::Dumper;
 use Time::Piece;
 use File::Basename;
 use WGmeta::Wireguard::Wrapper::Bridge;
-use WGmeta::Constants;
+use WGmeta::ValidAttributes;
 use Digest::MD5 qw(md5);
 
 use base 'Exporter';
@@ -113,10 +113,10 @@ sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefi
         'wg_meta_disabled_prefix' => $wg_meta_disabled_prefix,
         'has_changed'             => FALSE,
         'parsed_config'           => read_wg_configs($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix),
-        'wg_meta_attrs'           => WGmeta::Constants::WG_META_DEFAULT,
-        'wg_orig_interface_attrs' => WGmeta::Constants::WG_ORIG_INTERFACE,
-        'wg_orig_peer_attrs'      => WGmeta::Constants::WG_ORIG_PEER,
-        'wg_quick_attrs'          => WGmeta::Constants::WG_QUICK,
+        'wg_meta_attrs'           => WGmeta::ValidAttributes::WG_META_DEFAULT,
+        'wg_orig_interface_attrs' => WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
+        'wg_orig_peer_attrs'      => WGmeta::ValidAttributes::WG_ORIG_PEER,
+        'wg_quick_attrs'          => WGmeta::ValidAttributes::WG_QUICK,
     };
     bless $self, $class;
     return $self;
@@ -184,7 +184,7 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                     if ($self->_validate_non_meta($interface, $identifier, $attribute)) {
                         my $real_attribute_name;
                         if ($attr_type == IS_WG_QUICK) {
-                            $real_attribute_name = $self->{wg_meta_attrs}{$attribute}{in_config_name};
+                            $real_attribute_name = $self->{wg_quick_attrs}{$attribute}{in_config_name};
                         }
                         elsif($attr_type == IS_WG_ORIG_INTERFACE) {
                             $real_attribute_name = $self->{wg_orig_interface_attrs}{$attribute}{in_config_name};
@@ -200,7 +200,7 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                         $self->{has_changed} = TRUE;
                     }
                     else {
-                        die "The supplied attribute `$attribute` is neither a valid `wg` nor `wg-quick` name";
+                        die "The supplied attribute `$attribute` is neither a valid `wg` nor `wg-quick` name (or is not valid for this section type)";
                     }
                 }
                 else {
