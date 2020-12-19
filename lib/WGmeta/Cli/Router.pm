@@ -30,18 +30,17 @@ None
 
 =cut
 sub route_command($ref_list_input_args) {
-    my @cmd_args = @{$ref_list_input_args};
-    if (!@cmd_args){
-        WGmeta::Cli::Commands::Help->new(splice @cmd_args, 1)->entry_point();
-    }
-    if (lc $cmd_args[0] eq 'show') {
-        WGmeta::Cli::Commands::Show->new(splice @cmd_args, 1)->entry_point();
-    }
-    elsif (lc $cmd_args[0] eq 'set') {
-        WGmeta::Cli::Commands::Set->new(splice @cmd_args, 1)->entry_point();
-    }
-    else {
-        WGmeta::Cli::Commands::Help->new(splice @cmd_args, 1)->entry_point();
+    my ($cmd,@cmd_args) = @$ref_list_input_args;
+    for ($cmd) {
+        /^show$/ && do {
+            WGmeta::Cli::Commands::Show->new(@cmd_args)->entry_point();
+            last;
+        };
+        /^set$/ && do {
+            WGmeta::Cli::Commands::Set->new(@cmd_args)->entry_point();
+            last;
+        };
+        WGmeta::Cli::Commands::Help->new->entry_point;
     }
 }
 

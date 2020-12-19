@@ -7,7 +7,7 @@ SUBDIRS = bin lib thirdparty etc
 PERLTESTS := $(shell find -L t -name "*.t")
 PM := $(shell find -L lib -name "*.pm")
 
-EXTRA_DIST = VERSION cpanfile COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(wildcard t/*.t) $(POD)
+EXTRA_DIST = VERSION cpanfile COPYRIGHT LICENSE CHANGES AUTHORS $(wildcard t/*.t) $(POD)
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
 

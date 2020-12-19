@@ -3,21 +3,12 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
-require WGmeta::Cli::Commands::Command;
+use parent 'WGmeta::Cli::Commands::Command';
 use WGmeta::Wireguard::Wrapper::Config;
-our @ISA = qw(WGmeta::Cli::Commands::Command);
 
 use constant WIREGUARD_HOME => '/home/tobias/Documents/wg-meta/t/Data/';
 use constant TRUE => 1;
 use constant FALSE => 0;
-
-sub new($class, @input_arguments) {
-    my $self = $class->SUPER::new(@input_arguments);
-
-    bless $self, $class;
-
-    return $self;
-}
 
 sub entry_point($self) {
     if ($self->_retrieve_or_die($self->{input_args}, 0) eq 'help') {
@@ -50,14 +41,14 @@ sub _run_command($self) {
 
             # if there is just one peer we skip here
             if ($offset != 0) {
-                $self->_apply_change_set($interface, @input_args[$cur_start ... $offset]);
+                $self->_apply_change_set($interface, @input_args[$cur_start .. $offset]);
                 $cur_start = $offset;
             }
         }
         $offset++;
     }
-    $self->_apply_change_set($interface, @input_args[$cur_start ... $offset]);
-    $self->{wg_meta}->commit();
+    $self->_apply_change_set($interface, @input_args[$cur_start .. $offset]);
+    $self->{wg_meta}->commit(1);
 }
 
 # internal method to split commandline args into "change-sets".
@@ -115,3 +106,5 @@ sub _forward($interface, $identifier, $attribute, $value) {
     # this is just as stub
     print("Forwarded to original wg command: `$attribute = $value`");
 }
+
+1;

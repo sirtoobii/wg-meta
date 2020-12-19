@@ -1,5 +1,0 @@
-#!/bin/sh
-autoreconf --force --install --verbose --make
-# force rebuild
-[ -f cpanfile ] && touch cpanfile
-# EOF

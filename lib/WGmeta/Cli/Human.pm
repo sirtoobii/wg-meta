@@ -12,10 +12,10 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 use base 'Exporter';
-our @EXPORT = qw(disabled2Human bits2human id timestamp2human);
+our @EXPORT = qw(disabled2human bits2human return_self timestamp2human);
 
 
-sub disabled2Human($state) {
+sub disabled2human($state) {
     if ($state == 1) {
         return "yes";
     }
@@ -86,7 +86,7 @@ sub timestamp2human($timestamp) {
     return $delta;
 }
 
-=head3 id($x)
+=head3 return_self($x)
 
 The famous C<id()> function
 
@@ -105,7 +105,7 @@ B<Returns>
 C<$x>
 
 =cut
-sub id($x) {
+sub return_self($x) {
     return $x;
 }
 

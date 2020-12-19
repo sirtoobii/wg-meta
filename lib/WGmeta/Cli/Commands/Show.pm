@@ -2,10 +2,8 @@ package WGmeta::Cli::Commands::Show;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
-use feature 'switch';
 
-require WGmeta::Cli::Commands::Command;
-our @ISA = qw(WGmeta::Cli::Commands::Command);
+use parent 'WGmeta::Cli::Commands::Command';
 
 use WGmeta::Cli::Human;
 use WGmeta::Wireguard::Wrapper::Config;
@@ -54,27 +52,27 @@ sub _run_command($self) {
     # the individual attributes are configured here
     my $attrs = {
         $self->{wg_meta_prefix} . 'Name'     => {
-            human_readable => \&id,
+            human_readable => \&return_self,
             dest           => WG_CONFIG,
             len            => 15,
         },
         $self->{wg_meta_prefix} . 'Alias'    => {
-            human_readable => \&id,
+            human_readable => \&return_self,
             dest           => WG_CONFIG,
             len            => 20
         },
         'PublicKey'                          => {
-            human_readable => \&id,
+            human_readable => \&return_self,
             dest           => WG_CONFIG,
             len            => 45
         },
         'endpoint'                           => {
-            human_readable => \&id,
+            human_readable => \&return_self,
             dest           => WG_SHOW,
             len            => 23
         },
         'AllowedIPs'                         => {
-            human_readable => \&id,
+            human_readable => \&return_self,
             dest           => WG_CONFIG,
             len            => 30
         },
@@ -94,7 +92,7 @@ sub _run_command($self) {
             len            => 14
         },
         $self->{wg_meta_prefix} . 'Disabled' => {
-            human_readable => \&disabled2Human,
+            human_readable => \&disabled2human,
             dest           => WG_CONFIG,
             len            => 15
         }
@@ -201,7 +199,7 @@ Value behind C<$key> or if not available I<#not_avail>
 =cut
 sub _get_value($self, $key, $ref_config_section, $ref_show_section, $ref_attrs) {
     # first decide if wg show or config
-    if ($ref_attrs->{$key}->{dest} == WG_CONFIG) {
+    if ($ref_attrs->{$key}{dest} == WG_CONFIG) {
         # config
         if (defined($ref_config_section) && exists $ref_config_section->{$key}) {
             if ($self->{human_readable} == TRUE) {
@@ -245,3 +243,5 @@ sub _prepare_attr($self, $attr, $ref_attrs) {
 sub cmd_help($self) {
     print "Usage: wg-meta show {interface | all} [dump]\n"
 }
+
+1;
