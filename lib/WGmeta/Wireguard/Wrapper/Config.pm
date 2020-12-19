@@ -60,11 +60,13 @@ use constant TRUE => 1;
 use constant IS_EMPTY => -1;
 use constant IS_COMMENT => 0;
 use constant IS_WG_META => 1;
+use constant IS_WG_QUICK => 4;
+use constant IS_WG_ORIG_INTERFACE => 5;
 use constant IS_SECTION => 2;
 use constant IS_NORMAL => 3;
 
 
-=head3 new($wireguard_home [, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-', $ref_hash_additional_attrs])
+=head3 new($wireguard_home [, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-'])
 
 Creates a new instance of this class. Default wg-meta attributes: 'Name' and 'Alias'.
 
@@ -99,14 +101,7 @@ B<Returns>
 An instance of Wrapper::Config
 
 =cut
-sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-', $ref_hash_additional_attrs = undef) {
-    my %default_attrs = WGmeta::Constants::WG_META_DEFAULT;
-    if (defined $ref_hash_additional_attrs) {
-        map {$default_attrs{$_} = undef} keys %{$ref_hash_additional_attrs};
-    }
-    else {
-        $ref_hash_additional_attrs = \%default_attrs;
-    }
+sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-') {
 
     if ($wg_meta_prefix eq $wg_meta_disabled_prefix) {
         die '`$wg_meta_prefix` and `$wg_meta_disabled_prefix` have to be different';
@@ -116,16 +111,18 @@ sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefi
         'wireguard_home'          => $wireguard_home,
         'wg_meta_prefix'          => $wg_meta_prefix,
         'wg_meta_disabled_prefix' => $wg_meta_disabled_prefix,
-        'valid_attrs'             => $ref_hash_additional_attrs,
         'has_changed'             => FALSE,
-        'parsed_config'           => read_wg_configs($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix)
+        'parsed_config'           => read_wg_configs($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix),
+        'wg_meta_attrs'           => WGmeta::Constants::WG_META_DEFAULT,
+        'wg_orig_interface_attrs' => WGmeta::Constants::WG_ORIG_INTERFACE,
+        'wg_orig_peer_attrs'      => WGmeta::Constants::WG_ORIG_PEER,
+        'wg_quick_attrs'          => WGmeta::Constants::WG_QUICK,
     };
-
     bless $self, $class;
     return $self;
 }
 
-=head3 set($interface, $identifier, $attribute, $value [, $allow_non_meta = FALSE])
+=head3 set($interface, $identifier, $attribute, $value [, $allow_non_meta, $forward_function])
 
 Sets a value on a specific interface section.
 
@@ -168,31 +165,42 @@ None
 
 =cut
 sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FALSE, $forward_function = undef) {
-    $attribute = ucfirst $attribute;
+    $attribute = $attribute;
+    my $attr_type = $self->_decide_attr_type($attribute);
     if ($self->_is_valid_interface($interface)) {
         if ($self->_is_valid_identifier($interface, $identifier)) {
-            if ($self->_decide_attr_type($attribute) == IS_WG_META) {
-                unless (exists $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $attribute}) {
+            if ($attr_type == IS_WG_META) {
+                my $real_attribute_name = $self->{wg_meta_attrs}{$attribute}{in_config_name};
+                unless (exists $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $real_attribute_name}) {
                     # the attribute does not (yet) exist in the configuration, lets add it to the list
-                    push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $self->{wg_meta_prefix} . $attribute;
+                    push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $self->{wg_meta_prefix} . $real_attribute_name;
                 }
                 # the attribute does already exist and therefore we just set it to the new value
-                $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $attribute} = $value;
+                $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $real_attribute_name} = $value;
                 $self->{has_changed} = TRUE;
             }
             else {
                 if ($allow_non_meta == TRUE) {
-                    if (_validate_non_meta($interface, $identifier, $attribute)) {
-                        unless (exists $self->{parsed_config}{$interface}{$identifier}{$attribute}) {
+                    if ($self->_validate_non_meta($interface, $identifier, $attribute)) {
+                        my $real_attribute_name;
+                        if ($attr_type == IS_WG_QUICK) {
+                            $real_attribute_name = $self->{wg_meta_attrs}{$attribute}{in_config_name};
+                        }
+                        elsif($attr_type == IS_WG_ORIG_INTERFACE) {
+                            $real_attribute_name = $self->{wg_orig_interface_attrs}{$attribute}{in_config_name};
+                        } else {
+                            $real_attribute_name = $self->{wg_orig_peer_attrs}{$attribute}{in_config_name};
+                        }
+                        unless (exists $self->{parsed_config}{$interface}{$identifier}{$real_attribute_name}) {
                             # the attribute does not (yet) exist in the configuration, lets add it to the list
-                            push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $attribute;
+                            push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $real_attribute_name;
                         }
                         # the attribute does already exist and therefore we just set it to the new value
-                        $self->{parsed_config}{$interface}{$identifier}{$attribute} = $value;
+                        $self->{parsed_config}{$interface}{$identifier}{$real_attribute_name} = $value;
                         $self->{has_changed} = TRUE;
                     }
                     else {
-                        die "The supplied attribute `$attribute` is neither a valid wg nor wg-quick name";
+                        die "The supplied attribute `$attribute` is neither a valid `wg` nor `wg-quick` name";
                     }
                 }
                 else {
@@ -215,16 +223,13 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
 
 }
 
-sub _validate_non_meta($interface, $identifier, $attr_name) {
+sub _validate_non_meta($self, $interface, $identifier, $attr_name) {
     # if we have an interface
-    my %wg_orig_interface = WGmeta::Constants::WG_ORIG_INTERFACE;
-    my %wg_orig_peer = WGmeta::Constants::WG_ORIG_PEER;
-    my %wg_quick = WGmeta::Constants::WG_QUICK;
     if ($interface eq $identifier) {
-        return exists($wg_orig_interface{lc $attr_name}) || exists( $wg_quick{$attr_name});
+        return exists($self->{wg_orig_interface_attrs}{$attr_name}) || exists($self->{wg_quick_attrs}{$attr_name});
     }
     else {
-        return exists($wg_orig_peer{lc $attr_name});
+        return exists($self->{wg_orig_peer_attrs}{$attr_name});
     }
 }
 
@@ -318,8 +323,14 @@ sub _toggle($self, $interface, $identifier, $enable) {
 
 # internal method to decide if an attribute is a wg-meta attribute
 sub _decide_attr_type($self, $attr_name) {
-    if (exists $self->{valid_attrs}{ucfirst $attr_name}) {
+    if (exists $self->{wg_meta_attrs}{$attr_name}) {
         return IS_WG_META;
+    }
+    elsif (exists $self->{wg_quick_attrs}{$attr_name}) {
+        return IS_WG_QUICK;
+    }
+    elsif (exists $self->{wg_orig_interface_attrs}{$attr_name}) {
+        return IS_WG_ORIG_INTERFACE;
     }
     else {
         return IS_NORMAL;
@@ -751,7 +762,7 @@ A string, ready to be written down as a config file.
 
 =cut
 sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $plain = FALSE) {
-    my $new_config = "\n";
+    my $new_config = "";
 
     for my $identifier (@{$ref_interface_config->{section_order}}) {
         if (_is_disabled($ref_interface_config->{$identifier}, $wg_meta_prefix . "Disabled")) {
@@ -856,7 +867,7 @@ A list of all valid interface names.
 
 =cut
 sub get_interface_list($self) {
-    return keys %{$self->{parsed_config}};
+    return sort keys %{$self->{parsed_config}};
 }
 
 =head3 get_interface_section($interface, $identifier)
@@ -915,7 +926,7 @@ sub get_section_list($self, $interface) {
         return @{$self->{parsed_config}{$interface}{section_order}};
     }
     else {
-        return {};
+        return ();
     }
 }
 
@@ -1072,6 +1083,15 @@ sub _add_to_hash_if_defined($ref_hash, $key, $value) {
         $ref_hash->{$key} = $value;
     }
     return $ref_hash;
+}
+
+# internal method to create a configuration file (this method exists primarily for testing purposes)
+sub _create_config($self, $interface, $plain = FALSE) {
+    return create_wg_config(
+        $self->{parsed_config}{$interface},
+        $self->{wg_meta_prefix},
+        $self->{disabled_prefix},
+        $plain = $plain)
 }
 
 =head3 dump()
