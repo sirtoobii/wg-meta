@@ -16,6 +16,7 @@ use constant FALSE => 0;
 use constant WG_CONFIG => 1;
 use constant WG_SHOW => 2;
 use constant NA_PLACEHOLDER => '#na';
+use Term::ANSIColor;
 
 sub entry_point($self) {
     # set defaults
@@ -43,7 +44,7 @@ sub entry_point($self) {
 
 sub _run_command($self) {
     my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new($self->{wireguard_home});
-    if (exists $self->{interface} && !$wg_meta->_is_valid_interface($self->{interface})){
+    if (exists $self->{interface} && !$wg_meta->_is_valid_interface($self->{interface})) {
         die "Invalid interface `$self->{interface}`";
     }
     my $out;
@@ -125,8 +126,8 @@ sub _run_command($self) {
         $self->{wg_meta_prefix} . 'Name',
         $self->{wg_meta_prefix} . 'Alias',
         'PublicKey',
-        'endpoint',
         'AllowedIPs',
+        'endpoint',
         'latest-handshake',
         'transfer-rx',
         'transfer-tx',
@@ -150,10 +151,9 @@ sub _run_command($self) {
 
     for my $iface (sort @interface_list) {
         # interface "header"
-        $output .= "interface: $iface \n";
-        # Attributes (header row)
-        $output .= join $spacer, map {$self->_prepare_attr($_, $attrs)} @attr_list;
-        $output .= "\n";
+        print color('bold green') . "interface: " . color('reset') . $iface . "\n";
+        my %interface = $wg_meta->get_interface_section($iface, $iface);
+        print color('bold ') . "  ListenPort: " . color('reset') . $interface{'ListenPort'} . "\n\n";
 
         # Attribute values
         for my $identifier ($wg_meta->get_section_list($iface)) {
@@ -165,105 +165,47 @@ sub _run_command($self) {
             # skip if type interface
             if ($interface_section{type} eq 'Peer') {
                 my %show_section = $wg_show->get_interface_section($iface, $identifier);
-                $output .= join($spacer,
-                    map {
-                        $self->_get_value($_,
-                            \%interface_section,
-                            \%show_section,
-                            $attrs,
-                        )
-                    }
-                        @attr_list
-                );
+                $self->_print_section(\%interface_section, \%show_section, $attrs, \@attr_list);
                 $output .= "\n";
             }
         }
     }
-    print $output;
 }
 
-=head3 _get_value($key, $ref_config_section, $ref_show_section, $ref_attrs [, $human_readable])
-
-This takes a C<$key> and decides using C<< $ref_attrs->{$key}->{dest} >> where to source the requested value.
-If C<$human> is set to true (default), it takes also care of formatting the values.
-If there is no value present in the respective config file I<#not_avail> is returned as placeholder instead.
-
-B<Parameters>
-
-=over 1
-
-=item
-
-C<$key> Key to access the value
-
-=item
-
-C<$ref_config_section> Reference to hash containing the current config section. For more details on the structure refer to L<WGmeta::Wireguard::Wrapper::Config>
-
-=item
-
-C<$ref_show_section> Reference to hash containing the current show section. For more details on the structure refer to L<WGmeta::Wireguard::Wrapper::Show>
-
-=item
-
-C<$ref_attrs > Reference to the attribute configs, specified in C<command_show()>
-
-=item
-
-C<[, $human_readable] > If set to 1 (default), the output is formatted and aligned according to the config in C<$ref_attrs>
-
-=back
-
-B<Returns>
-
-Value behind C<$key> or if not available I<#not_avail>
-
-=cut
-sub _get_value($self, $key, $ref_config_section, $ref_show_section, $ref_attrs) {
-    # first decide if wg show or config
-    if ($ref_attrs->{$key}{dest} == WG_CONFIG) {
-        # config
-        if (defined($ref_config_section) && exists $ref_config_section->{$key}) {
-            if ($self->{human_readable} == TRUE) {
-                return sprintf "%-*s", $ref_attrs->{$key}->{len}, $ref_attrs->{$key}->{human_readable}($ref_config_section->{$key});
-            }
-            return $ref_config_section->{$key};
+sub _print_section($self, $ref_config_section, $ref_show_section, $ref_attrs, $ref_attr_list) {
+    #Disabled state
+    if (exists $ref_config_section->{$self->{wg_meta_prefix}.'Disabled'}) {
+        if ($ref_config_section->{$self->{wg_meta_prefix}.'Disabled'} == 1) {
+            print  color('bold','red'). '-'. color('reset');
         }
         else {
-            return sprintf "%-*s", $ref_attrs->{$key}->{len}, NA_PLACEHOLDER;
+            print color('bold','green'). '+'. color('reset');
         }
     }
     else {
-        # wg show
-        if (defined($ref_show_section) && exists $ref_show_section->{$key}) {
-            if ($self->{human_readable} == TRUE) {
-                return sprintf "%-*s", $ref_attrs->{$key}->{len}, $ref_attrs->{$key}->{human_readable}($ref_show_section->{$key});
+        print color('bold','green'). '+' . color('reset');
+    }
+    print color('bold') . 'peer:' . color('reset') . " $ref_config_section->{PublicKey}\n";
+    for my $attr (@{$ref_attr_list}) {
+        if ($ref_attrs->{$attr}{dest} == WG_CONFIG) {
+            unless ($attr eq 'PublicKey' or $attr eq $self->{wg_meta_prefix}.'Disabled') {
+                if (defined($ref_config_section) && exists $ref_config_section->{$attr}) {
+                    print "  " . color('bold') . $attr . ": " . color('reset') . $ref_config_section->{$attr} . "\n";
+                }
             }
-            return $ref_show_section->{$key};
         }
         else {
-            return sprintf "%-*s", $ref_attrs->{$key}->{len}, NA_PLACEHOLDER;
+            # wg_show
+            if (defined($ref_show_section) && exists $ref_show_section->{$attr}) {
+                print "  ".color('bold'). $attr. ": ".color('reset') . $ref_attrs->{$attr}->{human_readable}($ref_show_section->{$attr});
+            }
         }
     }
-}
-
-sub _prepare_attr($self, $attr, $ref_attrs) {
-    my $len = $ref_attrs->{$attr}{len};
-    my $wg_meta_prefix = quotemeta $self->{wg_meta_prefix};
-    # # remove possible wg meta prefix
-    # $attr =~ s/$wg_meta_prefix//g;
-    # make first char uppercase
-    if ($self->{human_readable} == TRUE) {
-        return sprintf "%-*s", $len, $ref_attrs->{$attr}{compact};
-    }
-    else {
-        return $ref_attrs->{$attr}{compact};
-    }
-
+    print "\n\n";
 }
 
 sub cmd_help($self) {
-    print "Usage: wg-meta show {interface | all} [dump]\n"
+    print "Usage: wg-meta show {interface} \n"
 }
 
 1;
