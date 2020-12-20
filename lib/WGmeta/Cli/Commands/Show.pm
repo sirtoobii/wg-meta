@@ -16,7 +16,13 @@ use constant FALSE => 0;
 use constant WG_CONFIG => 1;
 use constant WG_SHOW => 2;
 use constant NA_PLACEHOLDER => '#na';
-use Term::ANSIColor;
+
+use constant BOLD => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[1m" : "";
+use constant RESET => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[0m" : "";
+use constant GREEN => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[32m" : "";
+use constant RED => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[31m" : "";
+
+
 
 sub entry_point($self) {
     # set defaults
@@ -151,9 +157,9 @@ sub _run_command($self) {
 
     for my $iface (sort @interface_list) {
         # interface "header"
-        print color('bold green') . "interface: " . color('reset') . $iface . "\n";
+        print BOLD . "interface: " . RESET . $iface . "\n";
         my %interface = $wg_meta->get_interface_section($iface, $iface);
-        print color('bold ') . "  ListenPort: " . color('reset') . $interface{'ListenPort'} . "\n\n";
+        print BOLD . "  ListenPort: " . RESET . $interface{'ListenPort'} . "\n\n";
 
         # Attribute values
         for my $identifier ($wg_meta->get_section_list($iface)) {
@@ -174,30 +180,30 @@ sub _run_command($self) {
 
 sub _print_section($self, $ref_config_section, $ref_show_section, $ref_attrs, $ref_attr_list) {
     #Disabled state
-    if (exists $ref_config_section->{$self->{wg_meta_prefix}.'Disabled'}) {
-        if ($ref_config_section->{$self->{wg_meta_prefix}.'Disabled'} == 1) {
-            print  color('bold','red'). '-'. color('reset');
+    if (exists $ref_config_section->{$self->{wg_meta_prefix} . 'Disabled'}) {
+        if ($ref_config_section->{$self->{wg_meta_prefix} . 'Disabled'} == 1) {
+            print BOLD.RED . '-' . RESET;
         }
         else {
-            print color('bold','green'). '+'. color('reset');
+            print BOLD.GREEN . '+' . RESET;
         }
     }
     else {
-        print color('bold','green'). '+' . color('reset');
+        print BOLD.GREEN . '+' . RESET;
     }
-    print color('bold') . 'peer:' . color('reset') . " $ref_config_section->{PublicKey}\n";
+    print BOLD . 'peer:' . RESET . " $ref_config_section->{PublicKey}\n";
     for my $attr (@{$ref_attr_list}) {
         if ($ref_attrs->{$attr}{dest} == WG_CONFIG) {
-            unless ($attr eq 'PublicKey' or $attr eq $self->{wg_meta_prefix}.'Disabled') {
+            unless ($attr eq 'PublicKey' or $attr eq $self->{wg_meta_prefix} . 'Disabled') {
                 if (defined($ref_config_section) && exists $ref_config_section->{$attr}) {
-                    print "  " . color('bold') . $attr . ": " . color('reset') . $ref_config_section->{$attr} . "\n";
+                    print "  " . BOLD . $attr . ": " . RESET . $ref_config_section->{$attr} . "\n";
                 }
             }
         }
         else {
             # wg_show
             if (defined($ref_show_section) && exists $ref_show_section->{$attr}) {
-                print "  ".color('bold'). $attr. ": ".color('reset') . $ref_attrs->{$attr}->{human_readable}($ref_show_section->{$attr});
+                print "  " . BOLD . $attr . ": " . RESET . $ref_attrs->{$attr}->{human_readable}($ref_show_section->{$attr});
             }
         }
     }
