@@ -19,6 +19,29 @@ sub read_dir($path, $pattern) {
     return @files;
 }
 
+=head3 read_file($path)
+
+Reads a file given by a C<$path> into a string
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$path> Path to file
+
+=back
+
+B<Raises>
+
+Exception if the file is somehow inaccessible.
+
+B<Returns>
+
+File contents as string
+
+=cut
 sub read_file($path) {
     open my $fh, '<', $path or die "Can't open file $!";
     my $file_content = do {

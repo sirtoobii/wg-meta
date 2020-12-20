@@ -1,4 +1,4 @@
-dist_bin_SCRIPTS = $(MJ_SCRIPT).pl
+dist_bin_SCRIPTS = wg-meta
 
 install-exec-hook:
 	[ "$(PERL5LIB)" == "" ] || cd "$(DESTDIR)$(bindir)" && $(PERL) -i -p -e 's{.*# PERL5LIB}{use lib qw($(PERL5LIB)); # PERL5LIB}' $(dist_bin_SCRIPTS) || true
@@ -6,4 +6,4 @@ install-exec-hook:
 	cd "$(DESTDIR)$(bindir)" && $(PERL) -i -p -e 's{^#!.*perl.*}{#!$(PERL)};' $(dist_bin_SCRIPTS)
 
 dist-hook:
-	$(PERL) -i -p -e 's/\$$VERSION\s*=\s*".+?";/\$$VERSION = "$(PACKAGE_VERSION)";/;'  $(MJ_CLASS).pl
+	$(PERL) -i -p -e 's/\$$VERSION\s*=\s*".+?";/\$$VERSION = "$(PACKAGE_VERSION)";/;'  $(MJ_CLASS)

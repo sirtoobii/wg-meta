@@ -2,12 +2,12 @@
 
 AUTOMAKE_OPTIONS =  foreign
 
-SUBDIRS = bin lib thirdparty etc
+SUBDIRS = bin lib
 
 PERLTESTS := $(shell find -L t -name "*.t")
 PM := $(shell find -L lib -name "*.pm")
 
-EXTRA_DIST = VERSION cpanfile COPYRIGHT LICENSE CHANGES AUTHORS $(wildcard t/*.t) $(POD)
+EXTRA_DIST = VERSION cpanfile COPYRIGHT LICENSE CHANGES AUTHORS $(wildcard t/*.t) $(POD) $(wildcard t/Data/test/*.conf) t/Data/test/wg_show_dump
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
 

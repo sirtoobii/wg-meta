@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use experimental 'signatures';
 
 use base 'Exporter';
-our @EXPORT = qw(gen_keypair get_wg_show);
+our @EXPORT = qw(gen_keypair get_wg_show run_external);
 
 use Symbol 'gensym';
 use IPC::Open3;
@@ -65,11 +65,11 @@ C<$command_line> Complete commandline for the external program to execute.
 
 =item *
 
-C<[$soft_fail]> If set to true, a warning is thrown instead of an exception
+C<[$input = undef]> If defined, this is feed into STD_IN of the C<$command_line>.
 
 =item *
 
-C<[$input]> If defined, this is feed into STD_IN of the C<$command_line>.
+C<[$soft_fail = FALSE]> If set to true, a warning is thrown instead of an exception
 
 =back
 

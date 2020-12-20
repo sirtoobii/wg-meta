@@ -5,6 +5,9 @@ use experimental 'signatures';
 use WGmeta::Cli::Commands::Show;
 use WGmeta::Cli::Commands::Set;
 use WGmeta::Cli::Commands::Help;
+use WGmeta::Cli::Commands::Enable;
+use WGmeta::Cli::Commands::Disable;
+use WGmeta::Cli::Commands::Apply;
 
 use base 'Exporter';
 our @EXPORT = qw(route_command);
@@ -31,6 +34,9 @@ None
 =cut
 sub route_command($ref_list_input_args) {
     my ($cmd,@cmd_args) = @$ref_list_input_args;
+    if (!defined $cmd){
+        WGmeta::Cli::Commands::Help->new->entry_point;
+    }
     for ($cmd) {
         /^show$/ && do {
             WGmeta::Cli::Commands::Show->new(@cmd_args)->entry_point();
@@ -38,6 +44,18 @@ sub route_command($ref_list_input_args) {
         };
         /^set$/ && do {
             WGmeta::Cli::Commands::Set->new(@cmd_args)->entry_point();
+            last;
+        };
+        /^enable$/ && do {
+            WGmeta::Cli::Commands::Enable->new(@cmd_args)->entry_point();
+            last;
+        };
+        /^disable$/ && do {
+            WGmeta::Cli::Commands::Disable->new(@cmd_args)->entry_point();
+            last;
+        };
+        /^apply$/ && do {
+            WGmeta::Cli::Commands::Apply->new(@cmd_args)->entry_point();
             last;
         };
         WGmeta::Cli::Commands::Help->new->entry_point;

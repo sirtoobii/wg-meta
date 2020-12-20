@@ -186,9 +186,10 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                         if ($attr_type == IS_WG_QUICK) {
                             $real_attribute_name = $self->{wg_quick_attrs}{$attribute}{in_config_name};
                         }
-                        elsif($attr_type == IS_WG_ORIG_INTERFACE) {
+                        elsif ($attr_type == IS_WG_ORIG_INTERFACE) {
                             $real_attribute_name = $self->{wg_orig_interface_attrs}{$attribute}{in_config_name};
-                        } else {
+                        }
+                        else {
                             $real_attribute_name = $self->{wg_orig_peer_attrs}{$attribute}{in_config_name};
                         }
                         unless (exists $self->{parsed_config}{$interface}{$identifier}{$real_attribute_name}) {
@@ -317,7 +318,7 @@ sub _toggle($self, $interface, $identifier, $enable) {
             warn "Section `$identifier` in `$interface` is already $enable";
         }
     }
-    $self->set($interface, $identifier, 'Disabled', $enable);
+    $self->set($interface, $identifier, 'disabled', $enable);
 }
 
 
@@ -658,7 +659,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
         close $fh;
         # checksum
         my $current_hash = _compute_checksum(create_wg_config($parsed_wg_config->{$i_name}, $wg_meta_prefix, $disabled_prefix, TRUE));
-        unless ("$current_hash" eq $checksum) {
+        if ($checksum ne '' && "$current_hash" ne $checksum) {
             warn "Config `$i_name.conf` has been changed by an other program or user. This is just a warning.";
         }
     }
@@ -803,7 +804,7 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
     }
 }
 
-=head3 commit([$is_hot_config = FALSE])
+=head3 commit([$is_hot_config = FALSE, $plain = FALSE])
 
 Writes down the parsed config to the wireguard configuration folder
 
@@ -816,6 +817,10 @@ B<Parameters>
 C<[$is_hot_config = FALSE])> If set to TRUE, the existing configuration is overwritten. Otherwise,
 the suffix '_not_applied' is appended to the filename
 
+=item
+
+C<[$plain = FALSE])> If set to TRUE, no header is generated
+
 =back
 
 B<Raises>
@@ -827,9 +832,9 @@ B<Returns>
 None
 
 =cut
-sub commit($self, $is_hot_config = FALSE) {
+sub commit($self, $is_hot_config = FALSE, $plain = FALSE) {
     for my $interface (keys %{$self->{parsed_config}}) {
-        my $new_config = create_wg_config($self->{parsed_config}{$interface}, $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix});
+        my $new_config = create_wg_config($self->{parsed_config}{$interface}, $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix}, $plain);
         my $fh;
         if ($is_hot_config == TRUE) {
             open $fh, '>', $self->{wireguard_home} . $interface . '.conf' or die $!;

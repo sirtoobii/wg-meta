@@ -10,12 +10,10 @@ use experimental 'signatures';
 use WGmeta::Cli::Router;
 
 our $VERSION = 0.01;
-
 if (@ARGV && $ARGV[0] eq '--version') {
     print "wg-meta v$VERSION - https://github.com/sirtoobii/wg-meta\n";
     exit;
 }
-
 
 # command line argument parser
 route_command(\@ARGV);

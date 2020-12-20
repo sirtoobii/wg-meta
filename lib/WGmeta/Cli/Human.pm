@@ -17,9 +17,9 @@ our @EXPORT = qw(disabled2human bits2human return_self timestamp2human);
 
 sub disabled2human($state) {
     if ($state == 1) {
-        return "yes";
+        return "no";
     }
-    return "no";
+    return "yes";
 }
 
 =head3 bits2human($n_bits)
@@ -81,7 +81,7 @@ sub timestamp2human($timestamp) {
         return ">day ago";
     }
     if ($delta < 86400) {
-        return sprintf("%.2f minutes ago", $delta / 60);
+        return sprintf("%.2f mins ago", $delta / 60);
     }
     return $delta;
 }

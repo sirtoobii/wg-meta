@@ -5,8 +5,6 @@ use experimental 'signatures';
 
 use parent 'WGmeta::Cli::Commands::Command';
 use WGmeta::Wireguard::Wrapper::Config;
-
-use constant WIREGUARD_HOME => '/home/tobias/Documents/wg-meta/t/Data/';
 use constant TRUE => 1;
 use constant FALSE => 0;
 
@@ -16,17 +14,8 @@ sub entry_point($self) {
         return
     }
     else {
-        my $wg_home;
-        # check if env var is available
-        if (defined($ENV{'WIREGUARD_HOME'})) {
-            $wg_home = $ENV{'WIREGUARD_HOME'};
-        }
-        else {
-            $wg_home = WIREGUARD_HOME;
-        }
-
         # would be very nice if we can set a type hint here...possible?
-        $self->{'wg_meta'} = WGmeta::Wireguard::Wrapper::Config->new($wg_home);
+        $self->{'wg_meta'} = WGmeta::Wireguard::Wrapper::Config->new($self->{wireguard_home});
         $self->_run_command();
     }
 }
@@ -48,7 +37,14 @@ sub _run_command($self) {
         $offset++;
     }
     $self->_apply_change_set($interface, @input_args[$cur_start .. $offset]);
-    $self->{wg_meta}->commit(1);
+    if (defined $ENV{IS_TESTING}) {
+        # omit header
+        $self->{wg_meta}->commit(1, 1);
+    }
+    else {
+        $self->{wg_meta}->commit(1, 0);
+    }
+
 }
 
 # internal method to split commandline args into "change-sets".

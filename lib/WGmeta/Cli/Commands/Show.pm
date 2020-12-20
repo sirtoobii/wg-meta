@@ -8,12 +8,14 @@ use parent 'WGmeta::Cli::Commands::Command';
 use WGmeta::Cli::Human;
 use WGmeta::Wireguard::Wrapper::Config;
 use WGmeta::Wireguard::Wrapper::Show;
+use WGmeta::Wireguard::Wrapper::Bridge;
 use WGmeta::Utils;
 
 use constant TRUE => 1;
 use constant FALSE => 0;
 use constant WG_CONFIG => 1;
 use constant WG_SHOW => 2;
+use constant NA_PLACEHOLDER => '#na';
 
 sub entry_point($self) {
     # set defaults
@@ -40,8 +42,19 @@ sub entry_point($self) {
 }
 
 sub _run_command($self) {
-    my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new('/home/tobias/Documents/wg-meta/t/Data/');
-    my ($out) = read_file('/home/tobias/Documents/wg-meta/t/Data/wg_show_dump');
+    my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new($self->{wireguard_home});
+    if (exists $self->{interface} && !$wg_meta->_is_valid_interface($self->{interface})){
+        die "Invalid interface `$self->{interface}`";
+    }
+    my $out;
+    if (defined $ENV{IS_TESTING}) {
+        use FindBin;
+        $out = read_file($FindBin::Bin . '/../t/Data/test/wg_show_dump');
+    }
+    else {
+        my @std_out = run_external('wg show all dump');
+        $out = join '', @std_out;
+    }
     my $wg_show = WGmeta::Wireguard::Wrapper::Show->new($out);
 
     my $spacer = "\t";
@@ -54,47 +67,56 @@ sub _run_command($self) {
         $self->{wg_meta_prefix} . 'Name'     => {
             human_readable => \&return_self,
             dest           => WG_CONFIG,
+            compact        => 'NAME',
             len            => 15,
         },
         $self->{wg_meta_prefix} . 'Alias'    => {
             human_readable => \&return_self,
             dest           => WG_CONFIG,
-            len            => 20
+            compact        => 'ALIAS',
+            len            => 12
         },
         'PublicKey'                          => {
             human_readable => \&return_self,
             dest           => WG_CONFIG,
+            compact        => 'PUBKEY',
             len            => 45
         },
         'endpoint'                           => {
             human_readable => \&return_self,
             dest           => WG_SHOW,
+            compact        => 'ENDPOINT',
             len            => 23
         },
         'AllowedIPs'                         => {
             human_readable => \&return_self,
             dest           => WG_CONFIG,
+            compact        => 'IPS',
             len            => 30
         },
         'latest-handshake'                   => {
             human_readable => \&timestamp2human,
             dest           => WG_SHOW,
-            len            => 20
+            compact        => 'L-HANDS',
+            len            => 13
         },
         'transfer-rx'                        => {
             human_readable => \&bits2human,
             dest           => WG_SHOW,
-            len            => 14
+            compact        => 'RX',
+            len            => 12
         },
         'transfer-tx'                        => {
             human_readable => \&bits2human,
             dest           => WG_SHOW,
-            len            => 14
+            compact        => 'TX',
+            len            => 12
         },
         $self->{wg_meta_prefix} . 'Disabled' => {
             human_readable => \&disabled2human,
             dest           => WG_CONFIG,
-            len            => 15
+            compact        => 'ACTIVE',
+            len            => 6
         }
     };
 
@@ -129,7 +151,7 @@ sub _run_command($self) {
     for my $iface (sort @interface_list) {
         # interface "header"
         $output .= "interface: $iface \n";
-        # Attributes
+        # Attributes (header row)
         $output .= join $spacer, map {$self->_prepare_attr($_, $attrs)} @attr_list;
         $output .= "\n";
 
@@ -208,7 +230,7 @@ sub _get_value($self, $key, $ref_config_section, $ref_show_section, $ref_attrs) 
             return $ref_config_section->{$key};
         }
         else {
-            return sprintf "%-*s", $ref_attrs->{$key}->{len}, "#not_avail";
+            return sprintf "%-*s", $ref_attrs->{$key}->{len}, NA_PLACEHOLDER;
         }
     }
     else {
@@ -220,22 +242,22 @@ sub _get_value($self, $key, $ref_config_section, $ref_show_section, $ref_attrs) 
             return $ref_show_section->{$key};
         }
         else {
-            return sprintf "%-*s", $ref_attrs->{$key}->{len}, "#not_avail";
+            return sprintf "%-*s", $ref_attrs->{$key}->{len}, NA_PLACEHOLDER;
         }
     }
 }
 
 sub _prepare_attr($self, $attr, $ref_attrs) {
-    my $len = $ref_attrs->{$attr}->{len};
+    my $len = $ref_attrs->{$attr}{len};
     my $wg_meta_prefix = quotemeta $self->{wg_meta_prefix};
-    # remove possible wg meta prefix
-    $attr =~ s/$wg_meta_prefix//g;
+    # # remove possible wg meta prefix
+    # $attr =~ s/$wg_meta_prefix//g;
     # make first char uppercase
     if ($self->{human_readable} == TRUE) {
-        return sprintf "%-*s", $len, uc $attr;
+        return sprintf "%-*s", $len, $ref_attrs->{$attr}{compact};
     }
     else {
-        return uc $attr;
+        return $ref_attrs->{$attr}{compact};
     }
 
 }

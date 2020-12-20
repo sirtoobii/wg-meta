@@ -126,10 +126,8 @@ AC_SUBST(PERL5LIB)
 
 AC_CONFIG_FILES([
     Makefile
-    etc/Makefile
     lib/Makefile
     bin/Makefile
-    thirdparty/Makefile
 ])
 
 AC_SUBST(VERSION)

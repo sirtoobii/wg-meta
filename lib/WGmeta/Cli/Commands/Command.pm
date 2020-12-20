@@ -3,11 +3,19 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
+use constant WIREGUARD_HOME => '/etc/wireguard/';
 
 sub new($class, @input_arguments) {
     my $self = {
         'input_args' => \@input_arguments
     };
+    # check if env var is available
+    if (defined($ENV{'WIREGUARD_HOME'})) {
+        $self->{wireguard_home} = $ENV{'WIREGUARD_HOME'};
+    }
+    else {
+        $self->{wireguard_home} = WIREGUARD_HOME;
+    }
     bless $self, $class;
     return $self;
 }
