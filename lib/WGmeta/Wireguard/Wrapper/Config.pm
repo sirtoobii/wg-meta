@@ -165,7 +165,6 @@ None
 
 =cut
 sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FALSE, $forward_function = undef) {
-    $attribute = $attribute;
     my $attr_type = $self->_decide_attr_type($attribute);
     if ($self->_is_valid_interface($interface)) {
         if ($self->_is_valid_identifier($interface, $identifier)) {
@@ -174,6 +173,9 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                 unless (exists $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $real_attribute_name}) {
                     # the attribute does not (yet) exist in the configuration, lets add it to the list
                     push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $self->{wg_meta_prefix} . $real_attribute_name;
+                }
+                if ($attribute eq 'alias') {
+                    $self->_update_alias_map($interface, $identifier, $value);
                 }
                 # the attribute does already exist and therefore we just set it to the new value
                 $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $real_attribute_name} = $value;
@@ -234,18 +236,27 @@ sub _validate_non_meta($self, $interface, $identifier, $attr_name) {
     }
 }
 
-=head3 set_by_alias($interface, $alias, $attribute, $value)
+sub _update_alias_map($self, $interface, $identifier, $alias) {
+    unless (exists $self->{parsed_config}{$interface}{alias_map}{$alias}) {
+        $self->{parsed_config}{$interface}{alias_map}{$alias} = $identifier;
+    }
+    else {
+        die "Alias `$alias` is already defined on interface `$interface`";
+    }
+}
 
-Same as L</set($interface, $identifier, $attribute, $value [, $allow_non_meta = FALSE])> - just with alias support.
+=head3 set_by_alias($interface, $alias, $attribute, $value [, $allow_non_meta = FALSE, $forward_function = undef])
+
+Same as L</set($interface, $identifier, $attribute, $value [, $allow_non_meta, $forward_function])> - just with alias support.
 
 B<Raises>
 
 Exception if alias is invalid
 
 =cut
-sub set_by_alias($self, $interface, $alias, $attribute, $value) {
+sub set_by_alias($self, $interface, $alias, $attribute, $value, $allow_non_meta = FALSE, $forward_function = undef) {
     my $identifier = $self->translate_alias($interface, $alias);
-    $self->set($interface, $identifier, $attribute, $value);
+    $self->set($interface, $identifier, $attribute, $value, $allow_non_meta, $forward_function);
 }
 
 =head3 disable($interface, $identifier)
@@ -380,7 +391,7 @@ sub translate_alias($self, $interface, $alias) {
         return $self->{parsed_config}{$interface}{alias_map}{$alias};
     }
     else {
-        die "Invalid alias `$alias` in interface $interface";
+        die "Invalid alias `$alias` on interface $interface";
     }
 }
 
@@ -828,6 +839,7 @@ B<Raises>
 Exception if: Folder or file is not writeable
 
 B<Returns>
+
 
 None
 

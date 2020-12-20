@@ -8,12 +8,14 @@ An approach to add metadata to the main wireguard config, written in Perl.
 - A CLI interface with abilities to _set_, _enable_, _disable_ and _apply_ your wireguard config(s).
 - A fancy _show_ output which combines the meta-data, running-config and static-configs
 - Modular structure: The whole parser is independent of the CLI module - and can be used as a standalone library.
-- The config parser/writer and as well as the `wg show dump` parser are independent too. For more info, please refer to the respective POD.
+- The config parser/writer and as well as the `wg show dump` parser are independent too. For more info, please refer to
+  the respective POD.
 - No external dependencies, runs on plain Perl (>=v5.22)!
 
 ## Installation
 
 ### Build from source
+
 ```shell
 ./autoreconf --install
 ./configure
@@ -22,6 +24,7 @@ make install
 ```
 
 ### From tar-ball
+
 ```shell
 tar xvf wg-meta-X.X.X.tar.gz
 cd wg-meta-X.X.X
@@ -34,6 +37,7 @@ make install
 - `WIREGUARD_HOME`: Directory containing the Wireguard configuration -> Make sure the path ends with a `/`.
 - `IS_TESTING`: When defined, it has the following effects:
     - `Commands::Set|Enable|Disable` omits the header of the generated configuration files.
+- `WG_NO_COLOR`: If defined, the show command does not prettify the output with colors.
 
 ## Usage
 
@@ -44,7 +48,16 @@ allowed-ips and so on.
 
 ```bash
 sudo wg-meta show
-# Some fancy output (tbd.)
+
+# output
+interface: wg0
+  ListenPort: 51888
+
++peer: WG_0_PEER_A_PUBLIC_KEY
+  #+Name: testero
+  #+Alias: IPv6_only1
+  AllowedIPs: fdc9:281f:04d7:9ee9::1/128
+  endpoint: 147.86.207.49:10400  latest-handshake: >month ago  transfer-rx: 0.26 MiB  transfer-tx: 1.36 MiB
 
 # Access using peer
 sudo wg-meta set wg0 peer +qz742hzxD3E5z5QF7VOvleVS1onavQpXBK3NdTh40g= name Fancy_meta_name
