@@ -48,7 +48,16 @@ allowed-ips and so on.
 
 ```bash
 sudo wg-meta show
-# Some fancy output (tbd.)
+
+# output
+interface: wg0
+  ListenPort: 51888
+
++peer: WG_0_PEER_A_PUBLIC_KEY
+  #+Name: testero
+  #+Alias: IPv6_only1
+  AllowedIPs: fdc9:281f:04d7:9ee9::1/128
+  endpoint: 147.86.207.49:10400  latest-handshake: >month ago  transfer-rx: 0.26 MiB  transfer-tx: 1.36 MiB
 
 # Access using peer
 sudo wg-meta set wg0 peer +qz742hzxD3E5z5QF7VOvleVS1onavQpXBK3NdTh40g= name Fancy_meta_name
