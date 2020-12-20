@@ -1,0 +1,13 @@
+.idea
+*.in
+autom4te.cache
+_Deparsed_XSubs.pm
+*.log
+*.status
+Makefile
+*.tar.gz
+!*/thirdparty/
+!*/conftools/
+!*/thirdparty/Makefile.am
+!*/thirdparty/cpanfile*snapshot
+lib/WGmeta/Config/test.pm
