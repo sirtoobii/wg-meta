@@ -40,6 +40,7 @@ PresharedKey = PEER_A-PEER_B-PRESHARED_KEY
 AllowedIPs = fdc9:281f:04d7:9ee9::1/128
 Endpoint = 198.51.100.101:60001
 #+Name = Name_by_test1
+#+Alias = alias2
 
 ';
 
@@ -47,7 +48,14 @@ Endpoint = 198.51.100.101:60001
 $wg_meta->set('mini_wg0', 'mini_wg0', 'listen-port', 60000, 1);
 $wg_meta->set('mini_wg0', 'mini_wg0', 'private-key', 'OHLK9lBHFqnu+9olAnyUN11pCeKP4uW6fwMAeRSy2F8=', 1);
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'endpoint', '198.51.100.101:60001', 1);
+
+# wg-meta attrs
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'Name_by_test1');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1');
+
+# wg-meta update alias by alias
+$wg_meta->set_by_alias('mini_wg0', 'alias1', 'alias', 'alias2');
+
 
 my $actual = $wg_meta->_create_config('mini_wg0', 1);
 ok $actual eq $expected, 'set valid attrs';
@@ -70,6 +78,9 @@ does_throw('non peer attribute on peer', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_
 # try to set a non interface attribute on a interface
 does_throw('non interface attribute on interface', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'allowed-ips', '10.0.0.0/32', 1));
 
+# try to an alias which is already present
+does_throw('alias already known', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1', 1));
+
 # # data validation errors (uncomment if we eventually implement attribute value validation...)
 # does_throw('listen-port nan', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'listen-port', 'not_a_number', 1));
 # does_throw('private-key too short', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'private-key', 'key_to_short', 1));
@@ -83,6 +94,9 @@ done_testing();
 # helper methods
 sub set_wrapper(@args) {
     $wg_meta->set(@args);
+}
+sub set_alias_wrapper(@args) {
+    $wg_meta->set_by_alias(@args);
 }
 
 sub does_throw($test_name, $fun, @args) {
