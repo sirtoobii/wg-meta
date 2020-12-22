@@ -23,7 +23,12 @@ make test
 make install
 ```
 
-### From tar-ball
+### Using `dpkg` package
+```shell
+sudo dpkg -i wg-meta_X.X.X.deb
+```
+
+### From dist-tar
 
 ```shell
 tar xvf wg-meta-X.X.X.tar.gz

@@ -194,16 +194,22 @@ sub _print_section($self, $ref_config_section, $ref_show_section, $ref_attrs, $r
     print BOLD . 'peer:' . RESET . " $ref_config_section->{PublicKey}\n";
     for my $attr (@{$ref_attr_list}) {
         if ($ref_attrs->{$attr}{dest} == WG_CONFIG) {
+            # exclude PublicKey and Disabled attrs
             unless ($attr eq 'PublicKey' or $attr eq $self->{wg_meta_prefix} . 'Disabled') {
                 if (defined($ref_config_section) && exists $ref_config_section->{$attr}) {
-                    print "  " . BOLD . $attr . ": " . RESET . $ref_config_section->{$attr} . "\n";
+                    # remove possible wg-meta prefix
+                    my $cleaned_attr = $attr;
+                    $cleaned_attr =~ s/\#\+//;
+                    print "  " . BOLD . $cleaned_attr . ": " . RESET . $ref_config_section->{$attr} . "\n";
                 }
             }
         }
         else {
             # wg_show
             if (defined($ref_show_section) && exists $ref_show_section->{$attr}) {
-                print "  " . BOLD . $attr . ": " . RESET . $ref_attrs->{$attr}->{human_readable}($ref_show_section->{$attr});
+                if($ref_show_section->{$attr} ne '(none)'){
+                    print "  " . BOLD . $attr . ": " . RESET . $ref_attrs->{$attr}->{human_readable}($ref_show_section->{$attr});
+                }
             }
         }
     }
