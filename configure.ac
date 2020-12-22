@@ -128,6 +128,7 @@ AC_CONFIG_FILES([
     Makefile
     lib/Makefile
     bin/Makefile
+    .debian/Makefile
 ])
 
 AC_SUBST(VERSION)

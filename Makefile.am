@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS =  foreign
 
-SUBDIRS = bin lib
+SUBDIRS = bin lib .debian
 
 PERLTESTS := $(shell find -L t -name "*.t")
 PM := $(shell find -L lib -name "*.pm")

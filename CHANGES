@@ -1,3 +1,11 @@
+0.0.3 2020-12-20 Tobias Bossert (tobias.bossert@fastpath.ch)
+
+- added: Makefile for .deb package
+- fix: apply command
+- added: support for custom wg-meta attributes
+- added: foundation for validating attribute values
+- changed: show output (cleanup)
+
 0.0.2 2020-12-20 Tobias Bossert (tobias.bossert@fastpath.ch)
 
 - fix: Alias must be unique
