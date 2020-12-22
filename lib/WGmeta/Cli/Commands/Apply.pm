@@ -18,10 +18,9 @@ sub entry_point($self) {
 
 sub _run_command($self){
     my $interface = $self->_retrieve_or_die($self->{input_args}, 0);
-    # this line is a work-around since `wg syncconf` does not accept from STD_IN (anymore?).
-    # However, activating this line does potentially leaks the interface private-key to unprivileged users...
-    # my $cmd_line = "sudo wg-quick strip $interface > /tmp/stripped_conf && sudo wg syncconf $interface /tmp/stripped_conf && rm /tmp/stripped_conf";
-    my $cmd_line = "wg syncconf $interface <(wg-quick strip $interface)";
+
+    # please note that there ar potential problems with this commend as mentioned here: https://github.com/WireGuard/wireguard-tools/pull/3
+    my $cmd_line = "su -c 'wg syncconf $interface <(wg-quick strip $interface)'";
     run_external($cmd_line);
 }
 
