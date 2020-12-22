@@ -60,8 +60,10 @@ use constant TRUE => 1;
 use constant IS_EMPTY => -1;
 use constant IS_COMMENT => 0;
 use constant IS_WG_META => 1;
+use constant IS_WG_META_ADDITIONAL => 6;
 use constant IS_WG_QUICK => 4;
 use constant IS_WG_ORIG_INTERFACE => 5;
+use constant IS_WG_ORIG_PEER => 7;
 use constant IS_SECTION => 2;
 use constant IS_NORMAL => 3;
 
@@ -108,15 +110,16 @@ sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefi
     }
 
     my $self = {
-        'wireguard_home'          => $wireguard_home,
-        'wg_meta_prefix'          => $wg_meta_prefix,
-        'wg_meta_disabled_prefix' => $wg_meta_disabled_prefix,
-        'has_changed'             => FALSE,
-        'parsed_config'           => read_wg_configs($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix),
-        'wg_meta_attrs'           => WGmeta::ValidAttributes::WG_META_DEFAULT,
-        'wg_orig_interface_attrs' => WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
-        'wg_orig_peer_attrs'      => WGmeta::ValidAttributes::WG_ORIG_PEER,
-        'wg_quick_attrs'          => WGmeta::ValidAttributes::WG_QUICK,
+        'wireguard_home'           => $wireguard_home,
+        'wg_meta_prefix'           => $wg_meta_prefix,
+        'wg_meta_disabled_prefix'  => $wg_meta_disabled_prefix,
+        'has_changed'              => FALSE,
+        'parsed_config'            => read_wg_configs($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix),
+        'wg_meta_attrs'            => WGmeta::ValidAttributes::WG_META_DEFAULT,
+        'wg_meta_additional_attrs' => WGmeta::ValidAttributes::WG_META_ADDITIONAL,
+        'wg_orig_interface_attrs'  => WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
+        'wg_orig_peer_attrs'       => WGmeta::ValidAttributes::WG_ORIG_PEER,
+        'wg_quick_attrs'           => WGmeta::ValidAttributes::WG_QUICK,
     };
     bless $self, $class;
     return $self;
@@ -168,8 +171,16 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
     my $attr_type = $self->_decide_attr_type($attribute);
     if ($self->_is_valid_interface($interface)) {
         if ($self->_is_valid_identifier($interface, $identifier)) {
-            if ($attr_type == IS_WG_META) {
-                my $real_attribute_name = $self->{wg_meta_attrs}{$attribute}{in_config_name};
+            if ($attr_type == IS_WG_META || $attr_type == IS_WG_META_ADDITIONAL) {
+
+                # Determine source of valid attributes
+                my $target_attribute_name = ($attr_type == IS_WG_META) ? 'wg_meta_attrs' : 'wg_meta_additional_attrs';
+
+                # Get the "real" name -> the one which is actually written down in the configuration file
+                my $real_attribute_name = $self->{$target_attribute_name}->{$attribute}{in_config_name};
+                unless (attr_value_is_valid($attribute, $value, $self->{$target_attribute_name})) {
+                    die "Invalid attribute value `$value` for `$attribute`";
+                }
                 unless (exists $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $real_attribute_name}) {
                     # the attribute does not (yet) exist in the configuration, lets add it to the list
                     push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $self->{wg_meta_prefix} . $real_attribute_name;
@@ -183,16 +194,20 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
             }
             else {
                 if ($allow_non_meta == TRUE) {
-                    if ($self->_validate_non_meta($interface, $identifier, $attribute)) {
-                        my $real_attribute_name;
+                    if (_fits_wg_section($interface, $identifier, $attr_type)) {
+                        my $target_attr_type;
                         if ($attr_type == IS_WG_QUICK) {
-                            $real_attribute_name = $self->{wg_quick_attrs}{$attribute}{in_config_name};
+                            $target_attr_type = 'wg_quick_attrs';
                         }
                         elsif ($attr_type == IS_WG_ORIG_INTERFACE) {
-                            $real_attribute_name = $self->{wg_orig_interface_attrs}{$attribute}{in_config_name};
+                            $target_attr_type = 'wg_orig_interface_attrs';
                         }
                         else {
-                            $real_attribute_name = $self->{wg_orig_peer_attrs}{$attribute}{in_config_name};
+                            $target_attr_type = 'wg_orig_peer_attrs';
+                        }
+                        my $real_attribute_name = $self->{$target_attr_type}{$attribute}{in_config_name};
+                        unless (attr_value_is_valid($attribute, $value, $self->{$target_attr_type})) {
+                            die "Invalid attribute value `$value` for `$attribute`";
                         }
                         unless (exists $self->{parsed_config}{$interface}{$identifier}{$real_attribute_name}) {
                             # the attribute does not (yet) exist in the configuration, lets add it to the list
@@ -203,7 +218,7 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                         $self->{has_changed} = TRUE;
                     }
                     else {
-                        die "The supplied attribute `$attribute` is neither a valid `wg` nor `wg-quick` name (or is not valid for this section type)";
+                        die "The supplied attribute `$attribute` is not valid for this section type (this most likely means you've tried to set a peer attribute in the interface section or vice-versa)";
                     }
                 }
                 else {
@@ -226,14 +241,46 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
 
 }
 
-sub _validate_non_meta($self, $interface, $identifier, $attr_name) {
+# internal method to check if a non-meta attribute is valid for the target section
+sub _fits_wg_section($interface, $identifier, $attr_type) {
     # if we have an interface
     if ($interface eq $identifier) {
-        return exists($self->{wg_orig_interface_attrs}{$attr_name}) || exists($self->{wg_quick_attrs}{$attr_name});
+        return $attr_type == IS_WG_ORIG_INTERFACE || $attr_type == IS_WG_QUICK
     }
     else {
-        return exists($self->{wg_orig_peer_attrs}{$attr_name});
+        return $attr_type == IS_WG_ORIG_PEER;
     }
+}
+
+=head3 attr_value_is_valid($attribute, $value, $ref_valid_attrs)
+
+Simply calls the C<validate()> function defined in L<WGmeta::Validator>
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$attribute> Attribute name
+
+=item
+
+C<$value> Attribute value
+
+=item
+
+C<$ref_valid_attrs> Reference to the corresponding L<WGmeta::Validator> section.
+
+=back
+
+B<Returns>
+
+True if validation was successful, False if not
+
+=cut
+sub attr_value_is_valid($attribute, $value, $ref_valid_attrs) {
+    return $ref_valid_attrs->{$attribute}{validator}($value);
 }
 
 sub _update_alias_map($self, $interface, $identifier, $alias) {
@@ -338,14 +385,20 @@ sub _decide_attr_type($self, $attr_name) {
     if (exists $self->{wg_meta_attrs}{$attr_name}) {
         return IS_WG_META;
     }
+    elsif (exists $self->{wg_meta_additional_attrs}{$attr_name}) {
+        return IS_WG_META_ADDITIONAL;
+    }
     elsif (exists $self->{wg_quick_attrs}{$attr_name}) {
         return IS_WG_QUICK;
     }
     elsif (exists $self->{wg_orig_interface_attrs}{$attr_name}) {
         return IS_WG_ORIG_INTERFACE;
     }
+    elsif (exists $self->{wg_orig_peer_attrs}{$attr_name}) {
+        return IS_WG_ORIG_PEER;
+    }
     else {
-        return IS_NORMAL;
+        die "Attribute `$attr_name` is not known";
     }
 }
 
