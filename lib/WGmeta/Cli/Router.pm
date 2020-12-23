@@ -8,6 +8,7 @@ use WGmeta::Cli::Commands::Help;
 use WGmeta::Cli::Commands::Enable;
 use WGmeta::Cli::Commands::Disable;
 use WGmeta::Cli::Commands::Apply;
+use WGmeta::Cli::Commands::Add;
 
 use base 'Exporter';
 our @EXPORT = qw(route_command);
@@ -52,6 +53,10 @@ sub route_command($ref_list_input_args) {
         };
         /^disable$/ && do {
             WGmeta::Cli::Commands::Disable->new(@cmd_args)->entry_point();
+            last;
+        };
+        /^addpeer$/ && do {
+            WGmeta::Cli::Commands::Add->new(@cmd_args)->entry_point();
             last;
         };
         /^apply$/ && do {

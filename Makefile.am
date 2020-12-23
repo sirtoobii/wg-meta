@@ -7,7 +7,7 @@ SUBDIRS = bin lib .debian
 PERLTESTS := $(shell find -L t -name "*.t")
 PM := $(shell find -L lib -name "*.pm")
 
-EXTRA_DIST = VERSION cpanfile COPYRIGHT LICENSE CHANGES AUTHORS $(wildcard t/*.t) $(POD) $(wildcard t/Data/test/*.conf) t/Data/test/wg_show_dump
+EXTRA_DIST = VERSION cpanfile COPYRIGHT LICENSE CHANGES AUTHORS $(wildcard t/*.t) $(POD) $(wildcard t/Data/test/*.conf) t/Data/test/wg_show_dump .debian/DEBIAN/control
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
 

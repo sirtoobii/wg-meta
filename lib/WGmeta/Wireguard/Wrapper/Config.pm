@@ -1105,7 +1105,7 @@ already present on an other peer.
 
 B<Returns>
 
-The private-key of the interface
+A tuple consisting of the iface private-key and listen port
 
 =cut
 sub add_peer($self, $interface, $name, $ip_address, $public_key, $alias = undef, $preshared_key = undef) {
@@ -1115,31 +1115,23 @@ sub add_peer($self, $interface, $name, $ip_address, $public_key, $alias = undef,
             die "An interface with this public-key already exists on `$interface`";
         }
         # generate peer config
-        my %peer = (
-            $self->{wg_meta_prefix} . 'Name' => $name,
-            'PublicKey'                      => $public_key,
-            'AllowedIPs'                     => $ip_address,
-        );
-        _add_to_hash_if_defined(\%peer, $self->{wg_meta_prefix} . 'Alias', $alias);
-        _add_to_hash_if_defined(\%peer, 'PresharedKey', $preshared_key);
-
-        # add to global config
-        if (defined($alias)) {
-            if (exists($self->{parsed_config}{$interface}{alias_map}{$alias})) {
-                die "Alias `$alias` is already defined on interface `$interface`!";
-            }
-            $self->{parsed_config}{$interface}{alias_map}{$alias} = $public_key;
-        }
-        # add actual peer data
+        my %peer = ();
         $self->{parsed_config}{$interface}{$public_key} = \%peer;
-        # add peer keys to order list
-        $self->{parsed_config}{$interface}{$public_key}{order} = [ (keys %peer) ];
+        $self->set($interface, $public_key, 'name', $name);
+        $self->set($interface, $public_key, 'public-key', $public_key, 1);
+        $self->set($interface, $public_key, 'allowed-ips', $ip_address, 1);
+        if (defined $alias){
+            $self->set($interface, $public_key, 'alias', $alias);
+        }
+        if (defined $preshared_key){
+            $self->set($interface, $public_key, 'preshared-key', $preshared_key);
+        }
+
         # set type to to Peer
         $self->{parsed_config}{$interface}{$public_key}{type} = 'Peer';
         # add section to global section list
         push @{$self->{parsed_config}{$interface}{section_order}}, $public_key;
-
-        return $self->{parsed_config}{$interface}{$interface}{PrivateKey};
+        return $self->{parsed_config}{$interface}{$interface}{PrivateKey}, $self->{parsed_config}{$interface}{$interface}{ListenPort};
     }
     else {
         die "Invalid interface `$interface`";

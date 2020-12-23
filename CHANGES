@@ -1,3 +1,8 @@
+0.0.4 2020-12-20 Tobias Bossert (tobias.bossert@fastpath.ch)
+
+- added: add peer functionality to cli
+- fix: Makefile version updates
+
 0.0.3 2020-12-20 Tobias Bossert (tobias.bossert@fastpath.ch)
 
 - added: Makefile for .deb package

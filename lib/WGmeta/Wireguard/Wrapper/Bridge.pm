@@ -25,6 +25,8 @@ Two strings: private-key and public-key
 sub gen_keypair() {
     my (@out_priv, undef) = run_external('wg genkey');
     my (@out_pub, undef) = run_external('wg pubkey', $out_priv[0]);
+    chomp @out_priv;
+    chomp @out_pub;
     return $out_priv[0], $out_pub[0];
 }
 

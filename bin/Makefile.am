@@ -5,5 +5,5 @@ install-exec-hook:
 	cd "$(DESTDIR)$(bindir)" && $(PERL) -i -p -e 's{.*# LIBDIR}{use lib qw($(libdir)); # LIBDIR}' $(dist_bin_SCRIPTS)
 	cd "$(DESTDIR)$(bindir)" && $(PERL) -i -p -e 's{^#!.*perl.*}{#!$(PERL)};' $(dist_bin_SCRIPTS)
 
-dist-hook:
-	$(PERL) -i -p -e 's/\$$VERSION\s*=\s*".+?";/\$$VERSION = "$(PACKAGE_VERSION)";/;'  $(MJ_CLASS)
+dist-hook: ../VERSION
+	$(PERL) -i -p -e 's/\$VERSION\s*=\s*".+?";/\$VERSION = "$(PACKAGE_VERSION)";/;' $(MJ_CLASS)

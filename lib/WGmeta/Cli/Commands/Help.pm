@@ -18,6 +18,7 @@ sub cmd_help($self) {
     print "\t set:  Sets configuration attributes\n";
     print "\t enable:  Enables a peer\n";
     print "\t disable:  Disables a peer\n";
+    print "\t addpeer:  Adds a (basic) peer and prints the client config to std_out\n";
     print "\t apply:  Just a shorthand for `wg syncconf <iface> <(wg-quick strip <iface>)`\n";
     print "You may pass `help` to any of these subcommands to view their usage\n";
     exit();

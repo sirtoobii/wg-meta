@@ -60,6 +60,24 @@ $wg_meta->set_by_alias('mini_wg0', 'alias1', 'alias', 'alias2');
 my $actual = $wg_meta->_create_config('mini_wg0', 1);
 ok $actual eq $expected, 'set valid attrs';
 
+# add peer
+my ($iface_privkey, $iface_listen) = $wg_meta->add_peer('mini_wg0', 'added_peer', '10.0.0.9/32', 'sa9sXzMC5h4oE+38M38D1bcakH7nQBChAN1ib30lODc=');
+ok $iface_privkey eq 'OHLK9lBHFqnu+9olAnyUN11pCeKP4uW6fwMAeRSy2F8=', 'add peer, priv-key';
+ok $iface_listen eq '60000', 'add peer, listen-port';
+
+$expected .= '[Peer]
+#+Name = added_peer
+PublicKey = sa9sXzMC5h4oE+38M38D1bcakH7nQBChAN1ib30lODc=
+AllowedIPs = 10.0.0.9/32
+#+Alias = new_peer
+
+';
+# and set an alias on this new peer
+$wg_meta->set('mini_wg0', 'sa9sXzMC5h4oE+38M38D1bcakH7nQBChAN1ib30lODc=', 'alias', 'new_peer');
+
+$actual = $wg_meta->_create_config('mini_wg0', 1);
+ok $actual eq $expected, 'add peer, content';
+
 # forwarder test
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 12345, 0, \&_forward);
 sub _forward($interface, $identifier, $attribute, $value) {
