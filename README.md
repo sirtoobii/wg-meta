@@ -17,7 +17,7 @@ An approach to add metadata to the main wireguard config, written in Perl.
 ### Build from source
 
 ```shell
-./autoreconf --install
+autoreconf --install
 ./configure
 make test
 make install
