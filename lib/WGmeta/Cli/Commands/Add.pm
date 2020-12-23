@@ -50,7 +50,7 @@ sub _run_command($self) {
 #+Name = $self->{name}
 Address = $self->{ips}
 ListenPort = 44544
-PrivateKey = $self->{pub_key}
+PrivateKey = $self->{priv_key}
 
 [Peer]
 PublicKey = $iface_pubkey
