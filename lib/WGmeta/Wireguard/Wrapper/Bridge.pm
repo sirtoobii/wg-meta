@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use experimental 'signatures';
 
 use base 'Exporter';
-our @EXPORT = qw(gen_keypair get_wg_show run_external);
+our @EXPORT = qw(gen_keypair get_pub_key get_wg_show run_external);
 
 use Symbol 'gensym';
 use IPC::Open3;
@@ -28,6 +28,30 @@ sub gen_keypair() {
     chomp @out_priv;
     chomp @out_pub;
     return $out_priv[0], $out_pub[0];
+}
+=head3 get_pub_key($priv_key)
+
+Runs I<wg pubkey> on C<$priv_key>.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$priv_key> A valid private key
+
+=back
+
+B<Returns>
+
+A string containing the derived publickey.
+
+=cut
+sub get_pub_key($priv_key){
+    my (@out, undef) = run_external('wg pubkey', $priv_key);
+    chomp @out;
+    return $out[0];
 }
 
 =head3 get_wg_show([$cmd])

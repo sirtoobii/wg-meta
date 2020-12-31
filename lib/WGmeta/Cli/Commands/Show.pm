@@ -159,8 +159,11 @@ sub _run_command($self) {
         # interface "header"
         print BOLD . "interface: " . RESET . $iface . "\n";
         my %interface = $wg_meta->get_interface_section($iface, $iface);
-        print BOLD . "  ListenPort: " . RESET . $interface{'ListenPort'} . "\n\n";
-        print BOLD . "  PublicKey: " . RESET . $interface{'PublicKey'} . "\n\n";
+        print BOLD . "  ListenPort: " . RESET . $interface{'ListenPort'} . "\n";
+
+        # try to derive iface public key from privatekey
+        my $iface_pubkey = do {eval {get_pub_key($interface{PrivateKey})} or "could_not_derive_publickey_from_privatekey"};
+        print BOLD . "  PublicKey: " . RESET . $iface_pubkey . "\n\n";
 
         # Attribute values
         for my $identifier ($wg_meta->get_section_list($iface)) {
@@ -183,14 +186,14 @@ sub _print_section($self, $ref_config_section, $ref_show_section, $ref_attrs, $r
     #Disabled state
     if (exists $ref_config_section->{$self->{wg_meta_prefix} . 'Disabled'}) {
         if ($ref_config_section->{$self->{wg_meta_prefix} . 'Disabled'} == 1) {
-            print BOLD.RED . '-' . RESET;
+            print BOLD . RED . '-' . RESET;
         }
         else {
-            print BOLD.GREEN . '+' . RESET;
+            print BOLD . GREEN . '+' . RESET;
         }
     }
     else {
-        print BOLD.GREEN . '+' . RESET;
+        print BOLD . GREEN . '+' . RESET;
     }
     print BOLD . 'peer:' . RESET . " $ref_config_section->{PublicKey}\n";
     for my $attr (@{$ref_attr_list}) {
@@ -208,7 +211,7 @@ sub _print_section($self, $ref_config_section, $ref_show_section, $ref_attrs, $r
         else {
             # wg_show
             if (defined($ref_show_section) && exists $ref_show_section->{$attr}) {
-                if($ref_show_section->{$attr} ne '(none)'){
+                if ($ref_show_section->{$attr} ne '(none)') {
                     print "  " . BOLD . $attr . ": " . RESET . $ref_attrs->{$attr}->{human_readable}($ref_show_section->{$attr});
                 }
             }
