@@ -9,7 +9,7 @@ An approach to add metadata to the main wireguard config, written in Perl.
 - A fancy _show_ output which combines the meta-data, running-config and static-configs
 - Modular structure: The whole parser is independent of the CLI module - and can be used as a standalone library.
 - The config parser/writer and as well as the `wg show dump` parser are independent too. For more info, please refer to
-  the respective POD.
+  their respective POD.
 - No external dependencies, runs on plain Perl (>=v5.22)!
 
 ## Installation
@@ -23,7 +23,7 @@ make test
 make install
 ```
 
-### Using `dpkg` package
+### Using `.deb` package
 ```shell
 sudo dpkg -i wg-meta_X.X.X.deb
 ```
@@ -39,7 +39,7 @@ make install
 
 ## Environment variables
 
-- `WIREGUARD_HOME`: Directory containing the Wireguard configuration -> Make sure the path ends with a `/`.
+- `WIREGUARD_HOME`: Directory containing the Wireguard configuration -> Make sure the path ends with a `/`. Defaults to `/etc/wireguard/`.
 - `IS_TESTING`: When defined, it has the following effects:
     - `Commands::Set|Enable|Disable` omits the header of the generated configuration files.
 - `WG_NO_COLOR`: If defined, the show command does not prettify the output with colors.

@@ -450,7 +450,7 @@ sub translate_alias($self, $interface, $alias) {
 
 =head3 read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)
 
-Parses all configuration files in C<$wireguard_home> matching I<.*\.conf$> and returns a hash with the following structure:
+Parses all configuration files in C<$wireguard_home> matching I<.*.conf$> and returns a hash with the following structure:
 
     {
         'interface_name' => {
@@ -486,13 +486,17 @@ If the section is of type 'Peer' the identifier equals to its public-key, otherw
 
 =item *
 
-wg-meta attributes are always prefixed with C<$wg_met_prefix>.
+wg-meta attributes are always prefixed with C<$wg_meta_prefix>.
 
 =item *
 
 If a section is marked as "disabled", this is represented in the attribute I<$wg_meta_prefix. 'Disabled' >.
 However, does only exist if this section has been enabled/disabled once.
 
+=item *
+
+To check wether a file is actually a Wireguard interface config, the parser first checks the presence of the string
+I<[Interface]>. If not present, the file is skipped (without warning!).
 
 =back
 
@@ -564,7 +568,10 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
         # read interface name
         my $i_name = basename($config_path);
         $i_name =~ s/\.conf//g;
-        open my $fh, '<', $config_path or die "Could not open config file at $config_path";
+
+        # First, lets read the entrie file to verify its actually wireguard config file
+        my $config_file_contents = read_file($config_path);
+        next unless ($config_file_contents =~ /\[Interface\]/);
 
         my %alias_map;
         my $current_state = -1;
@@ -587,7 +594,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
         my @section_data_order;
         my @section_order;
 
-        while (my $line = <$fh>) {
+        for my $line (split "\n", $config_file_contents) {
             $current_state = _decide_state($line, $wg_meta_prefix, $disabled_prefix);
 
             # remove disabled prefix if any
@@ -599,7 +606,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
             elsif ($current_state == IS_SECTION) {
                 # strip-off [] and whitespaces
                 $line =~ s/^\[|\]\s*$//g;
-                if (_is_valid_section($line) == TRUE) {
+                if (_is_valid_section($line)) {
                     if ($STATE_EMPTY_SECTION == TRUE && $STATE_INIT_DONE == TRUE) {
                         die 'Found empty section, aborting';
                     }
@@ -720,7 +727,6 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
         #print Dumper(\%alias_map);
         #print Dumper(\@section_order);
         #print Dumper($parsed_wg_config);
-        close $fh;
         # checksum
         my $current_hash = _compute_checksum(create_wg_config($parsed_wg_config->{$i_name}, $wg_meta_prefix, $disabled_prefix, TRUE));
         if ($checksum ne '' && "$current_hash" ne $checksum) {
@@ -850,16 +856,14 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
     }
     if ($plain == FALSE) {
         my $new_hash = _compute_checksum($new_config);
-        my $config_header =
-            "# This config is generated and maintained by wg-meta.
-# It is strongly recommended to edit this config only through a supporting wg-meta
-# implementation (e.g the wg-meta cli interface)
-#
-# Changes to this header are always overwritten, you can add normal comments in [Peer] and [Interface] section though.
-#
-# Support and issue tracker: https://github.com/sirtoobii/wg-meta
-#+Checksum = $new_hash
-";
+        my $config_header = "# This config is generated and maintained by wg-meta.\n"
+            . "# It is strongly recommended to edit this config only through a supporting wg-meta\n"
+            . "# implementation (e.g the wg-meta cli interface)\n"
+            . "#\n"
+            . "# Changes to this header are always overwritten, you can add normal comments in [Peer] and [Interface] section though.\n"
+            . "#\n"
+            . "# Support and issue tracker: https://github.com/sirtoobii/wg-meta\n"
+            . "#+Checksum = $new_hash\n\n";
 
         return $config_header . $new_config;
     }
@@ -1047,7 +1051,7 @@ None
 =cut
 sub add_interface($self, $interface_name, $ip_address, $listen_port, $private_key) {
     if ($self->_is_valid_interface($interface_name)) {
-        die "Interface `$interface_name` already exists"
+        die "Interface `$interface_name` already exists";
     }
     my %interface = (
         'Address'    => $ip_address,

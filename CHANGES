@@ -1,3 +1,8 @@
+0.0.5 2020-12-31 Tobias Bossert (tobias.bossert@fastpath.ch)
+
+- fix: Allow non wireguard .conf files in $WIREGUARD_HOME
+- changed: Added interface public key to the show command
+
 0.0.4 2020-12-20 Tobias Bossert (tobias.bossert@fastpath.ch)
 
 - added: add peer functionality to cli

@@ -160,6 +160,7 @@ sub _run_command($self) {
         print BOLD . "interface: " . RESET . $iface . "\n";
         my %interface = $wg_meta->get_interface_section($iface, $iface);
         print BOLD . "  ListenPort: " . RESET . $interface{'ListenPort'} . "\n\n";
+        print BOLD . "  PublicKey: " . RESET . $interface{'PublicKey'} . "\n\n";
 
         # Attribute values
         for my $identifier ($wg_meta->get_section_list($iface)) {
