@@ -1,10 +1,10 @@
-package WGmeta::Cli::Commands::Set;
+package Wireguard::WGmeta::Cli::Commands::Set;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
-use parent 'WGmeta::Cli::Commands::Command';
-use WGmeta::Wireguard::Wrapper::Config;
+use parent 'Wireguard::WGmeta::Cli::Commands::Command';
+use Wireguard::WGmeta::Wrapper::Config;
 use constant TRUE => 1;
 use constant FALSE => 0;
 
@@ -15,7 +15,7 @@ sub entry_point($self) {
     }
     else {
         # would be very nice if we can set a type hint here...possible?
-        $self->{'wg_meta'} = WGmeta::Wireguard::Wrapper::Config->new($self->{wireguard_home});
+        $self->{'wg_meta'} = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
         $self->_run_command();
     }
 }

@@ -7,9 +7,9 @@ use lib "$FindBin::Bin/../thirdparty/lib/perl5";
 use experimental 'signatures';
 use Test::More;
 
-use WGmeta::Wireguard::Wrapper::Config;
+use Wireguard::WGmeta::Wrapper::Config;
 
-my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new($FindBin::Bin . '/Data/test/');
+my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new($FindBin::Bin . '/Data/test/');
 
 
 # parser tests

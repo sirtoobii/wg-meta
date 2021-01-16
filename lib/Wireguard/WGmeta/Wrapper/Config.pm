@@ -6,8 +6,8 @@ Wrapper class around the wireguard configuration files
 
 =head1 SYNOPSIS
 
- use WGmeta::Wireguard::Wrapper::Config;
- my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new('<path to wireguard configuration>');
+ use Wireguard::WGmeta::Wrapper::Config;
+ my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new('<path to wireguard configuration>');
 
 
 =head1 DESCRIPTION
@@ -18,8 +18,8 @@ bonus, the parser and encoder are exported ar usable as standalone methods
 
 =head1 EXAMPLES
 
- use WGmeta::Wireguard::Wrapper::Config;
- my $wg-meta = WGmeta::Wireguard::Wrapper::Config->new('<path to wireguard configuration>');
+ use Wireguard::WGmeta::Wrapper::Config;
+ my $wg-meta = Wireguard::WGmeta::Wrapper::Config->new('<path to wireguard configuration>');
 
  # set an attribute (non wg-meta attributes forwarded to the original `wg set` command)
  wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', '<attribute_name>', '<attribute_value>');
@@ -38,16 +38,16 @@ bonus, the parser and encoder are exported ar usable as standalone methods
 =cut
 
 use v5.22;
-package WGmeta::Wireguard::Wrapper::Config;
+package Wireguard::WGmeta::Wrapper::Config;
 use strict;
 use warnings;
 use experimental 'signatures';
-use WGmeta::Utils;
 use Data::Dumper;
 use Time::Piece;
 use File::Basename;
-use WGmeta::Wireguard::Wrapper::Bridge;
-use WGmeta::ValidAttributes;
+use Wireguard::WGmeta::Wrapper::Bridge;
+use Wireguard::WGmeta::ValidAttributes;
+use Wireguard::WGmeta::Utils;
 use Digest::MD5 qw(md5);
 
 use base 'Exporter';
@@ -115,11 +115,11 @@ sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefi
         'wg_meta_disabled_prefix'  => $wg_meta_disabled_prefix,
         'has_changed'              => FALSE,
         'parsed_config'            => read_wg_configs($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix),
-        'wg_meta_attrs'            => WGmeta::ValidAttributes::WG_META_DEFAULT,
-        'wg_meta_additional_attrs' => WGmeta::ValidAttributes::WG_META_ADDITIONAL,
-        'wg_orig_interface_attrs'  => WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
-        'wg_orig_peer_attrs'       => WGmeta::ValidAttributes::WG_ORIG_PEER,
-        'wg_quick_attrs'           => WGmeta::ValidAttributes::WG_QUICK,
+        'wg_meta_attrs'            => Wireguard::WGmeta::ValidAttributes::WG_META_DEFAULT,
+        'wg_meta_additional_attrs' => Wireguard::WGmeta::ValidAttributes::WG_META_ADDITIONAL,
+        'wg_orig_interface_attrs'  => Wireguard::WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
+        'wg_orig_peer_attrs'       => Wireguard::WGmeta::ValidAttributes::WG_ORIG_PEER,
+        'wg_quick_attrs'           => Wireguard::WGmeta::ValidAttributes::WG_QUICK,
     };
     bless $self, $class;
     return $self;

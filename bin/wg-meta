@@ -7,9 +7,9 @@ use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../thirdparty/lib/perl5";
 use experimental 'signatures';
 
-use WGmeta::Cli::Router;
+use Wireguard::WGmeta::Cli::Router;
 
-our $VERSION = "0.0.0"; # do not change, get updated automatically during make dist target
+our $VERSION = "0.0.0"; # do not change, gets updated automatically during make dist target
 if (@ARGV && $ARGV[0] eq '--version') {
     print "wg-meta v$VERSION - https://github.com/sirtoobii/wg-meta\n";
     exit;

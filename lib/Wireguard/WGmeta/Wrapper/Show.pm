@@ -6,24 +6,24 @@ Class for parsing the output of C<wg show dump>.
 
 =head1 SYNOPSIS
 
- use WGmeta::Wireguard::Wrapper::Show;
- my $wg_show = WGmeta::Wireguard::Wrapper::Show->new(<wg show dump output as string>);
+ use Wireguard::WGmeta::Wrapper::Show;
+ my $wg_show = Wireguard::WGmeta::Wrapper::Show->new(<wg show dump output as string>);
 
 
 =head1 DESCRIPTION
 
 This class contains a parser for the output of C<wg show dump> together with an interface to retrieve the parsed data.
 An important note tough: This class does not perform the necessary I/O by itself and therefore the actual output of the command
-C<wg show dump> has to be captured into a string externally (e.g using L<WGmeta::Wireguard::Wrapper::Bridge/get_wg_show([$cmd])>).
+C<wg show dump> has to be captured into a string externally (e.g using L<Wireguard::WGmeta::Wrapper::Bridge/get_wg_show([$cmd])>).
 
 
 =head1 EXAMPLES
 
- use WGmeta::Wireguard::Wrapper::Show;
- use WGmeta::Wireguard::Wrapper::Bridge;
+ use Wireguard::WGmeta::Wrapper::Show;
+ use Wireguard::WGmeta::Wrapper::Bridge;
 
  my ($out, $err) = get_wg_show();
- my $wg_show = WGmeta::Wireguard::Wrapper::Show->new($out);
+ my $wg_show = Wireguard::WGmeta::Wrapper::Show->new($out);
 
  # get a specfic interface section
  wg_show->get_interface_section('wg0', '<interface_public_key>')
@@ -35,7 +35,7 @@ C<wg show dump> has to be captured into a string externally (e.g using L<WGmeta:
 
 =cut
 use v5.22;
-package WGmeta::Wireguard::Wrapper::Show;
+package Wireguard::WGmeta::Wrapper::Show;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
@@ -46,7 +46,7 @@ our @EXPORT = qw(wg_show_dump_parser);
 use constant FALSE => 0;
 use constant TRUE => 1;
 use Data::Dumper;
-use WGmeta::Utils;
+use Wireguard::WGmeta::Utils;
 
 =head3 new($wg_show_dump)
 
@@ -80,7 +80,7 @@ sub new($class, $wg_show_dump) {
 =head3 wg_show_dump_parser($input)
 
 Parser for the output of C<wg show dump>. Aims to create a compatible structure as
-L<WGmeta::Wireguard::Wrapper::Config/read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)>:
+L<Wireguard::WGmeta::Wrapper::Config/read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)>:
 
     {
         'interface_name' => {

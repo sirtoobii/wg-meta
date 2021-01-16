@@ -1,9 +1,12 @@
-package WGmeta::Cli::Commands::Disable;
+package Wireguard::WGmeta::Cli::Commands::Enable;
 use strict;
 use warnings FATAL => 'all';
+
 use experimental 'signatures';
 
-use parent 'WGmeta::Cli::Commands::Command';
+use Wireguard::WGmeta::Wrapper::Config;
+use parent 'Wireguard::WGmeta::Cli::Commands::Command';
+
 
 
 sub entry_point($self) {
@@ -11,7 +14,7 @@ sub entry_point($self) {
         $self->cmd_help();
     }
     # would be very nice if we can set a type hint here...possible?
-    $self->{'wg_meta'} = WGmeta::Wireguard::Wrapper::Config->new($self->{wireguard_home});
+    $self->{'wg_meta'} = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
     $self->_run_command();
 }
 
@@ -22,7 +25,7 @@ sub _run_command($self){
     eval {
         $identifier = $self->{wg_meta}->translate_alias($interface, $identifier);
     };
-    $self->{wg_meta}->disable($interface, $identifier);
+    $self->{wg_meta}->enable($interface, $identifier);
 
     if (defined $ENV{IS_TESTING}) {
         # omit header
@@ -33,10 +36,9 @@ sub _run_command($self){
     }
 }
 
-
 sub cmd_help($self) {
-    print "Usage: wg-meta disable <interface> {alias | public-key} \n";
-    exit;
+    print "Usage: wg-meta enable <interface> {alias | public-key} \n";
+    exit();
 }
 
 1;

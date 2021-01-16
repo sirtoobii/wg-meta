@@ -9,8 +9,8 @@ use Test::More;
 
 use constant TEST_DIR => $FindBin::Bin . '/Data/test/';
 
-use WGmeta::Cli::Router;
-use WGmeta::Utils;
+use Wireguard::WGmeta::Cli::Router;
+use Wireguard::WGmeta::Utils;
 
 
 # set wireguard home to test data

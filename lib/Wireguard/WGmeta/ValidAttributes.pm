@@ -1,8 +1,8 @@
-package WGmeta::ValidAttributes;
+package Wireguard::WGmeta::ValidAttributes;
 use strict;
 use warnings FATAL => 'all';
 
-use WGmeta::Validator;
+use Wireguard::WGmeta::Validator;
 
 
 # Attribute configurations (do not change, add your own under WG_META_ADDITIONAL)

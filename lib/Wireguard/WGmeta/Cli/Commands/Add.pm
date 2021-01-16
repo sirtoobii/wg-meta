@@ -1,12 +1,12 @@
-package WGmeta::Cli::Commands::Add;
+package Wireguard::WGmeta::Cli::Commands::Add;
 use strict;
 use warnings FATAL => 'all';
 
 use experimental 'signatures';
 
-use parent 'WGmeta::Cli::Commands::Command';
+use parent 'Wireguard::WGmeta::Cli::Commands::Command';
 
-use WGmeta::Wireguard::Wrapper::Bridge;
+use Wireguard::WGmeta::Wrapper::Bridge;
 
 sub entry_point($self) {
     if ($self->_retrieve_or_die($self->{input_args}, 0) eq 'help') {
@@ -26,7 +26,7 @@ sub entry_point($self) {
     $self->{priv_key} = $privkey;
 
     # would be very nice if we can set a type hint here...possible?
-    $self->{'wg_meta'} = WGmeta::Wireguard::Wrapper::Config->new($self->{wireguard_home});
+    $self->{'wg_meta'} = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
     $self->_run_command();
 }
 

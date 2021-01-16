@@ -1,12 +1,12 @@
-package WGmeta::Cli::Commands::Apply;
+package Wireguard::WGmeta::Cli::Commands::Apply;
 use strict;
 use warnings FATAL => 'all';
 
 use experimental 'signatures';
 
-use parent 'WGmeta::Cli::Commands::Command';
+use parent 'Wireguard::WGmeta::Cli::Commands::Command';
 
-use WGmeta::Wireguard::Wrapper::Bridge;
+use Wireguard::WGmeta::Wrapper::Bridge;
 
 
 sub entry_point($self) {

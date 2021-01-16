@@ -1,15 +1,15 @@
-package WGmeta::Cli::Commands::Show;
+package Wireguard::WGmeta::Cli::Commands::Show;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
-use parent 'WGmeta::Cli::Commands::Command';
+use parent 'Wireguard::WGmeta::Cli::Commands::Command';
 
-use WGmeta::Cli::Human;
-use WGmeta::Wireguard::Wrapper::Config;
-use WGmeta::Wireguard::Wrapper::Show;
-use WGmeta::Wireguard::Wrapper::Bridge;
-use WGmeta::Utils;
+use Wireguard::WGmeta::Cli::Human;
+use Wireguard::WGmeta::Wrapper::Config;
+use Wireguard::WGmeta::Wrapper::Show;
+use Wireguard::WGmeta::Wrapper::Bridge;
+use Wireguard::WGmeta::Utils;
 
 use constant TRUE => 1;
 use constant FALSE => 0;
@@ -49,7 +49,7 @@ sub entry_point($self) {
 }
 
 sub _run_command($self) {
-    my $wg_meta = WGmeta::Wireguard::Wrapper::Config->new($self->{wireguard_home});
+    my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
     if (exists $self->{interface} && !$wg_meta->_is_valid_interface($self->{interface})) {
         die "Invalid interface `$self->{interface}`";
     }
@@ -62,7 +62,7 @@ sub _run_command($self) {
         my @std_out = run_external('wg show all dump');
         $out = join '', @std_out;
     }
-    my $wg_show = WGmeta::Wireguard::Wrapper::Show->new($out);
+    my $wg_show = Wireguard::WGmeta::Wrapper::Show->new($out);
 
     my $spacer = "\t";
     if ($self->{human_readable} == TRUE) {

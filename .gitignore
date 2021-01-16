@@ -10,4 +10,4 @@ Makefile
 !*/conftools/
 !*/thirdparty/Makefile.am
 !*/thirdparty/cpanfile*snapshot
-lib/WGmeta/Config/test.pm
+lib/Wireguard/WGmeta/Config/test.pm

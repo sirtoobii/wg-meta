@@ -1,4 +1,4 @@
-package WGmeta::Utils;
+package Wireguard::WGmeta::Utils;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';

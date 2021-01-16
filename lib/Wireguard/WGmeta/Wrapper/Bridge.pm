@@ -1,4 +1,4 @@
-package WGmeta::Wireguard::Wrapper::Bridge;
+package Wireguard::WGmeta::Wrapper::Bridge;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';

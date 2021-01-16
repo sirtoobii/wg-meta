@@ -1,4 +1,4 @@
-package WGmeta::Cli::Commands::Command;
+package Wireguard::WGmeta::Cli::Commands::Command;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';

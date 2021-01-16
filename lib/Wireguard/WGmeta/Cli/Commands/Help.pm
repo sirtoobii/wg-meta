@@ -1,9 +1,9 @@
-package WGmeta::Cli::Commands::Help;
+package Wireguard::WGmeta::Cli::Commands::Help;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
-use parent 'WGmeta::Cli::Commands::Command';
+use parent 'Wireguard::WGmeta::Cli::Commands::Command';
 
 
 sub entry_point($self) {

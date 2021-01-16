@@ -12,7 +12,7 @@ copy_files:
 	test -d wg-meta-$(PACKAGE_VERSION)/usr/share || mkdir wg-meta-$(PACKAGE_VERSION)/usr/share
 	test -d wg-meta-$(PACKAGE_VERSION)/usr/share/perl5 || mkdir wg-meta-$(PACKAGE_VERSION)/usr/share/perl5
 
-	cp -r ../lib/WGmeta wg-meta-$(PACKAGE_VERSION)/usr/share/perl5
+	cp -r ../lib/Wireguard wg-meta-$(PACKAGE_VERSION)/usr/share/perl5
 
 	# bash completion
 	test -d wg-meta-$(PACKAGE_VERSION)/usr/share || mkdir wg-meta-$(PACKAGE_VERSION)/usr/share
