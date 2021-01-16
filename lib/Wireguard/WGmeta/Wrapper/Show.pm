@@ -160,6 +160,29 @@ sub get_interface_list($self) {
     return sort keys %{$self->{parsed_show}};
 }
 
+=head3 iface_exists($interface)
+
+Simply checks if data is available for a specific interface. Useful to check if an interface is up.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> An interface name
+
+=back
+
+B<Returns>
+
+If yes, returns True else False
+
+=cut
+sub iface_exists($self, $interface) {
+    return exists $self->{parsed_show}{$interface};
+}
+
 =head3 get_interface_section($interface, $identifier)
 
 Returns a specific section of an interface

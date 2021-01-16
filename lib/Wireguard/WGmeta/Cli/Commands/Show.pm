@@ -159,8 +159,9 @@ sub _run_command($self) {
         # interface "header"
         print BOLD . "interface: " . RESET . $iface . "\n";
         my %interface = $wg_meta->get_interface_section($iface, $iface);
+        # Print Interface state
+        print BOLD . "  State: " . RESET . (($wg_show->iface_exists($iface)) ? GREEN . "UP" : RED . "DOWN") . RESET . "\n";
         print BOLD . "  ListenPort: " . RESET . $interface{'ListenPort'} . "\n";
-
         # try to derive iface public key from privatekey
         my $iface_pubkey = do {eval {get_pub_key($interface{PrivateKey})} or "could_not_derive_publickey_from_privatekey"};
         print BOLD . "  PublicKey: " . RESET . $iface_pubkey . "\n\n";
