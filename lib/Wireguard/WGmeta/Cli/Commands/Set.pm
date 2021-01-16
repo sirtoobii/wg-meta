@@ -58,9 +58,7 @@ sub _apply_change_set($self, $interface, @change_set) {
         $identifier = $self->_retrieve_or_die(\@change_set, 2);
 
         # try to resolve alias
-        eval {
-            $identifier = $self->{wg_meta}->translate_alias($interface, $identifier);
-        };
+        $identifier = $self->{wg_meta}->try_translate_alias($interface, $identifier);
 
         $offset += 2;
     }

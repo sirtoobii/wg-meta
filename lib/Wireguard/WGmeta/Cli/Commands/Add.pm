@@ -53,6 +53,7 @@ PrivateKey = $self->{priv_key}
 PublicKey = $iface_pubkey
 AllowedIPs = 0.0.0.0/0, ::/0
 Endpoint = <replace-with-your-fqdn-or-ip>:$iface_listen
+PersistentKeepalive = 25
 ";
 
     $self->{wg_meta}->commit(1);

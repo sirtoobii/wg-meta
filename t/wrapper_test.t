@@ -78,6 +78,27 @@ $wg_meta->set('mini_wg0', 'sa9sXzMC5h4oE+38M38D1bcakH7nQBChAN1ib30lODc=', 'alias
 $actual = $wg_meta->_create_config('mini_wg0', 1);
 ok $actual eq $expected, 'add peer, content';
 
+$expected = '[Interface]
+Address = 10.0.0.2/24
+ListenPort = 51860
+PrivateKey = WG_1_PEER_B_PRIVATE_KEY
+
+';
+
+# remove peer
+$wg_meta->remove_peer('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY');
+$actual = $wg_meta->_create_config('mini_wg1', 1);
+ok $actual eq $expected, 'removed peer, content';
+
+# test if the alias got removed too
+does_throw('access deleted alias', (sub(@args){$wg_meta->translate_alias(@args)}), ('mini_wg1', 'Alias1'));
+
+# remove interface
+$wg_meta->remove_interface('mini_wg1');
+@output = $wg_meta->get_interface_list();
+my @expected = ('mini_wg0');
+ok eq_array(\@output, \@expected), 'remove interface';
+
 # forwarder test
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 12345, 0, \&_forward);
 sub _forward($interface, $identifier, $attribute, $value) {
@@ -105,6 +126,12 @@ does_throw('listen-port nan', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'listen-po
 # does_throw('private-key invalid chars', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'private-key', 'key invalid chars', 1));
 # does_throw('address invalid', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'address', 'invalid_address', 1));
 
+
+# remove all interface
+$wg_meta->remove_interface('mini_wg0');
+@output = $wg_meta->get_interface_list();
+@expected = ();
+ok eq_array(\@output, \@expected), 'removed all interfaces';
 
 done_testing();
 

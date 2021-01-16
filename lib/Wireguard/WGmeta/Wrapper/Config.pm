@@ -254,7 +254,7 @@ sub _fits_wg_section($interface, $identifier, $attr_type) {
 
 =head3 attr_value_is_valid($attribute, $value, $ref_valid_attrs)
 
-Simply calls the C<validate()> function defined in L<WGmeta::Validator>
+Simply calls the C<validate()> function defined in L<Wireguard::WGmeta::Validator>
 
 B<Parameters>
 
@@ -270,7 +270,7 @@ C<$value> Attribute value
 
 =item
 
-C<$ref_valid_attrs> Reference to the corresponding L<WGmeta::Validator> section.
+C<$ref_valid_attrs> Reference to the corresponding L<Wireguard::WGmeta::Validator> section.
 
 =back
 
@@ -445,6 +445,39 @@ sub translate_alias($self, $interface, $alias) {
     }
     else {
         die "Invalid alias `$alias` on interface $interface";
+    }
+}
+=head3 try_translate_alias($interface, $may_alias)
+
+Tries to translate an identifier (which may be an alias).
+However, unlike L</translate_alias($interface, $alias)>, no
+exception is thrown on failure, instead the C<$may_alias> is returned.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> A valid interface name (is not validated)
+
+=item
+
+C<$may_alias> An identifier which could be a valid alias for this interface
+
+=back
+
+B<Returns>
+
+If the alias is valid for the specified interface, the corresponding identifier is returned, else C<$may_alias>
+
+=cut
+sub try_translate_alias($self, $interface, $may_alias) {
+    if (exists $self->{parsed_config}{$interface}{alias_map}{$may_alias}) {
+        return $self->{parsed_config}{$interface}{alias_map}{$may_alias};
+    }
+    else {
+        return $may_alias;
     }
 }
 
@@ -937,7 +970,7 @@ Return a list of all interfaces
 
 B<Returns>
 
-A list of all valid interface names.
+A list of all valid interface names. If no interfaces are available, an empty list is returned
 
 =cut
 sub get_interface_list($self) {
@@ -1124,10 +1157,10 @@ sub add_peer($self, $interface, $name, $ip_address, $public_key, $alias = undef,
         $self->set($interface, $public_key, 'name', $name);
         $self->set($interface, $public_key, 'public-key', $public_key, 1);
         $self->set($interface, $public_key, 'allowed-ips', $ip_address, 1);
-        if (defined $alias){
+        if (defined $alias) {
             $self->set($interface, $public_key, 'alias', $alias);
         }
-        if (defined $preshared_key){
+        if (defined $preshared_key) {
             $self->set($interface, $public_key, 'preshared-key', $preshared_key);
         }
 
@@ -1140,7 +1173,90 @@ sub add_peer($self, $interface, $name, $ip_address, $public_key, $alias = undef,
     else {
         die "Invalid interface `$interface`";
     }
+}
 
+=head3 remove_peer($interface, $identifier)
+
+Removes a peer (identified by it's public key or alias) from an interface.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> A valid interface name
+
+=item
+
+C<$identifier> A valid identifier (or an alias)
+
+=back
+
+B<Raises>
+
+Exception if interface or identifier is invalid
+
+B<Returns>
+
+None
+
+=cut
+sub remove_peer($self, $interface, $identifier) {
+    if ($self->_is_valid_interface($interface)) {
+        $identifier = $self->try_translate_alias($interface, $identifier);
+        if ($self->_is_valid_identifier($interface, $identifier)) {
+
+            # delete section
+            delete $self->{parsed_config}{$interface}{$identifier};
+
+            # delete from section list
+            $self->{parsed_config}{$interface}{section_order} = [ grep {$_ ne $identifier} @{$self->{parsed_config}{$interface}{section_order}} ];
+
+            # delete alias (if exists)
+            while (my ($alias, $a_identifier) = each %{$self->{parsed_config}{$interface}{alias_map}}) {
+                if ($a_identifier eq $identifier) {
+                    delete $self->{parsed_config}{$interface}{alias_map}{$alias};
+                }
+            }
+        }
+        else {
+            die "Invalid identifier `$identifier` for `$interface`";
+        }
+    }
+    else {
+        die "Invalid interface `$interface`";
+    }
+}
+
+=head3 remove_interface($interface)
+
+Removes an interface
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> A valid interface name
+
+=back
+
+B<Raises>
+
+Exception if interface or identifier is invalid
+
+B<Returns>
+
+None
+
+=cut
+sub remove_interface($self, $interface) {
+    if ($self->_is_valid_interface($interface)) {
+        # delete interface
+        delete $self->{parsed_config}{$interface};
+    }
 }
 
 # internal method to add to hash if value is defined
