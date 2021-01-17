@@ -56,12 +56,14 @@ sudo wg-meta show
 
 # output
 interface: wg0
+  State: UP
   ListenPort: 51888
+  PublicKey: +qz742hzxD3E5z5QF7VOvleVS1onavQpXBK3NdTh40g=
 
 +peer: WG_0_PEER_A_PUBLIC_KEY
-  #+Name: testero
-  #+Alias: IPv6_only1
-  AllowedIPs: fdc9:281f:04d7:9ee9::1/128
+  Name: testero
+  Alias: Dual_stack_peer1
+  AllowedIPs: fdc9:281f:04d7:9ee9::1/128, 10.0.3.43/32
   endpoint: 147.86.207.49:10400  latest-handshake: >month ago  transfer-rx: 0.26 MiB  transfer-tx: 1.36 MiB
 
 # Access using peer
