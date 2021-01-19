@@ -30,7 +30,7 @@ A Cli interface L<Wireguard::WGmeta::Cli>
 
 =head1 AUTHORS
 
-S<Tobias Bossert E<lt>tobias.bossert@fastpath.chE<gt>>
+S<Tobias Bossert E<lt>tobib at cpan.orgE<gt>>
 
 =head1 COPYRIGHT AND LICENSE
 

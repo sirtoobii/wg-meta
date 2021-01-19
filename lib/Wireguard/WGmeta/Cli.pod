@@ -10,12 +10,14 @@ A CLI interface, implementing L<Wireguard::WGmeta::Wrapper::Config> and L<Wiregu
 
 Probably the easiest way is installing the the .deb package from the linked git repo (if you are on debian)
 
-For any other cases: This project supports automake
+For any other cases:
 
-  autoreconf --install
-  ./configure
+  perl Makefile.PL
   make test
-  make install
+  (sudo) make install
+
+  # bash autocompletion (optional)
+  (sudo) cp wg-meta_completions.sh /etc/bash_completion.d/wg-meta
 
 =head1 SYNOPSIS
 

@@ -1,6 +1,6 @@
 #  Copyright (C) 2020 Tobias Bossert
 
-AC_INIT([wg-meta],m4_esyscmd([tr -d '\n' < VERSION]),[tobias.bossert@fastpath.ch])
+AC_INIT([wg-meta],m4_esyscmd([tr -d '\n' < VERSION]),[tobib@cpan.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR(conftools)
 
