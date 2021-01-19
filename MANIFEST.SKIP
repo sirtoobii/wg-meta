@@ -4,7 +4,6 @@
 ^MYMETA\.
 ^blib
 ^pm_to_blib
-^README.md
 \.idea
 \.debian
 \.git
@@ -14,5 +13,5 @@ cpanfile
 .*.am
 \.perl-version
 configure\.ac
-test.\pl
 _Deparsed_XSubs\.pm
+^test\.pl

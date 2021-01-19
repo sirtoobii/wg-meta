@@ -7,7 +7,7 @@ use lib "$FindBin::Bin/../thirdparty/lib/perl5";
 use experimental 'signatures';
 use Test::More;
 
-use constant TEST_DIR => $FindBin::Bin . '/Data/test/';
+use constant TEST_DIR => $FindBin::Bin . '/test_data/';
 
 use Wireguard::WGmeta::Cli::Router;
 use Wireguard::WGmeta::Utils;

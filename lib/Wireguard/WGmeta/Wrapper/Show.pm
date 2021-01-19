@@ -43,6 +43,8 @@ use experimental 'signatures';
 use base 'Exporter';
 our @EXPORT = qw(wg_show_dump_parser);
 
+our $VERSION = "0.0.0";
+
 use constant FALSE => 0;
 use constant TRUE => 1;
 use Data::Dumper;

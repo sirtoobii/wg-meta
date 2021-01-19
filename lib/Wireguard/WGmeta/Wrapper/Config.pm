@@ -33,6 +33,12 @@ bonus, the parser and encoder are exported ar usable as standalone methods
  # write config (if parameter is set to True, the config is overwritten, if set to False the resulting file is suffixed with '_dryrun'
  wg_meta->commit(1);
 
+ # Or use just the parser
+ my $hash_parsed_configs = read_wg_configs('/etc/wireguard/', '#+', '#-');
+
+ # and similarly to transform the parsed config into a wireguard compatible format again
+ my $wg0_config = create_wg_config($hash_parsed_configs{wg0}, '#+', '#-')
+
 =head1 METHODS
 
 =cut
@@ -52,6 +58,8 @@ use Digest::MD5 qw(md5);
 
 use base 'Exporter';
 our @EXPORT = qw(read_wg_configs create_wg_config);
+
+our $VERSION = "0.0.0";
 
 use constant FALSE => 0;
 use constant TRUE => 1;

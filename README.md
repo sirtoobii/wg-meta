@@ -17,8 +17,7 @@ An approach to add metadata to the main wireguard config, written in Perl.
 ### Build from source
 
 ```shell
-autoreconf --install
-./configure
+perl Makefile.PL
 make test
 make install
 ```
@@ -26,15 +25,6 @@ make install
 ### Using `.deb` package
 ```shell
 sudo dpkg -i wg-meta_X.X.X.deb
-```
-
-### From dist-tar
-
-```shell
-tar xvf wg-meta-X.X.X.tar.gz
-cd wg-meta-X.X.X
-make test
-make install
 ```
 
 ## Environment variables
