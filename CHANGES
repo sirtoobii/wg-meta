@@ -1,3 +1,11 @@
+0.0.6 2021-01-20 Tobias Bossert (tobib at cpan.org)
+- added: permission check (CLI)
+- added: Pretty errors and warnings (CLI)
+- changed: Refactored to Wireguard::WGmeta namespace
+- added: Interface state to show output (CLI)
+- added: methods to remove peers and interfaces (API)
+- cpan release
+
 0.0.5 2020-12-31 Tobias Bossert (tobib at cpan.org)
 
 - fix: Allow non wireguard .conf files in $WIREGUARD_HOME
