@@ -9,6 +9,10 @@ Class for parsing the output of C<wg show dump>.
  use Wireguard::WGmeta::Wrapper::Show;
  my $wg_show = Wireguard::WGmeta::Wrapper::Show->new(<wg show dump output as string>);
 
+ # if you need just the parser
+ my $out = `wg show dump`;
+ my $ref_hash_parsed_show = wg_show_dump_parser($out);
+
 
 =head1 DESCRIPTION
 
@@ -26,10 +30,7 @@ C<wg show dump> has to be captured into a string externally (e.g using L<Wiregua
  my $wg_show = Wireguard::WGmeta::Wrapper::Show->new($out);
 
  # get a specfic interface section
- wg_show->get_interface_section('wg0', '<interface_public_key>')
-
- # the parser is also exported as standalone
- my $ref_hash_parsed_show = wg_show_dump_parser($out)
+ wg_show->get_interface_section('wg0', '<interface_public_key>');
 
 =head1 METHODS
 

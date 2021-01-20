@@ -9,6 +9,11 @@ Wrapper class around the wireguard configuration files
  use Wireguard::WGmeta::Wrapper::Config;
  my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new('<path to wireguard configuration>');
 
+ # or when you need just the parser component
+ my $hash_parsed_configs = read_wg_configs('/etc/wireguard/', '#+', '#-');
+
+ # and similarly to transform the parsed config into a wireguard compatible format again
+ my $wg0_config = create_wg_config($hash_parsed_configs{wg0}, '#+', '#-')
 
 =head1 DESCRIPTION
 
@@ -32,12 +37,6 @@ bonus, the parser and encoder are exported ar usable as standalone methods
 
  # write config (if parameter is set to True, the config is overwritten, if set to False the resulting file is suffixed with '_dryrun'
  wg_meta->commit(1);
-
- # Or use just the parser
- my $hash_parsed_configs = read_wg_configs('/etc/wireguard/', '#+', '#-');
-
- # and similarly to transform the parsed config into a wireguard compatible format again
- my $wg0_config = create_wg_config($hash_parsed_configs{wg0}, '#+', '#-')
 
 =head1 METHODS
 
