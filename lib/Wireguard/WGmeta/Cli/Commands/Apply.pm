@@ -13,6 +13,7 @@ sub entry_point($self) {
     if ($self->_retrieve_or_die($self->{input_args}, 0) eq 'help') {
         $self->cmd_help();
     }
+    $self->check_privileges();
     $self->_run_command();
 }
 

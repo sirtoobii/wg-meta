@@ -12,6 +12,7 @@ sub entry_point($self) {
     if ($self->_retrieve_or_die($self->{input_args}, 0) eq 'help') {
         $self->cmd_help();
     }
+    $self->check_privileges();
     # read input parameters
     my $len = @{$self->{input_args}};
     $self->{interface} = $self->_retrieve_or_die($self->{input_args}, 0);

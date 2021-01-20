@@ -59,7 +59,7 @@ use Digest::MD5 qw(md5);
 use base 'Exporter';
 our @EXPORT = qw(read_wg_configs create_wg_config);
 
-our $VERSION = "0.0.0";
+our $VERSION = "0.0.0"; # do not change manually, this variable is updated when calling make
 
 use constant FALSE => 0;
 use constant TRUE => 1;
@@ -1237,7 +1237,7 @@ sub remove_peer($self, $interface, $identifier) {
     }
 }
 
-=head3 remove_interface($interface)
+=head3 remove_interface($interface [, $keep_file = FALSE])
 
 Removes an interface
 
@@ -1248,6 +1248,10 @@ B<Parameters>
 =item
 
 C<$interface> A valid interface name
+
+=item
+
+C<$keep_file = FALSE> If set to True, an empty file is left behind.
 
 =back
 
@@ -1260,10 +1264,13 @@ B<Returns>
 None
 
 =cut
-sub remove_interface($self, $interface) {
+sub remove_interface($self, $interface, $keep_file = FALSE) {
     if ($self->_is_valid_interface($interface)) {
         # delete interface
         delete $self->{parsed_config}{$interface};
+        if ($keep_file == FALSE) {
+            unlink "$self->{wireguard_home}$interface.conf" or warn "Could not delete `$self->{wireguard_home}$interface.conf` do you have the needed permissions?";
+        }
     }
 }
 

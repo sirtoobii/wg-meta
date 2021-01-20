@@ -14,6 +14,7 @@ sub entry_point($self) {
         return
     }
     else {
+        $self->check_privileges();
         # would be very nice if we can set a type hint here...possible?
         $self->{'wg_meta'} = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
         $self->_run_command();

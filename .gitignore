@@ -11,4 +11,3 @@ Makefile
 !*/thirdparty/Makefile.am
 !*/thirdparty/cpanfile*snapshot
 !*/.debian/Makefile
-lib/Wireguard/WGmeta/Config/test.pm

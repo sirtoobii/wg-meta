@@ -13,6 +13,7 @@ sub entry_point($self) {
     if ($self->_retrieve_or_die($self->{input_args}, 0) eq 'help') {
         $self->cmd_help();
     }
+    $self->check_privileges();
     # would be very nice if we can set a type hint here...possible?
     $self->{'wg_meta'} = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
     $self->_run_command();

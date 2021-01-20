@@ -32,6 +32,7 @@ sudo dpkg -i wg-meta_X.X.X.deb
 - `WIREGUARD_HOME`: Directory containing the Wireguard configuration -> Make sure the path ends with a `/`. Defaults to `/etc/wireguard/`.
 - `IS_TESTING`: When defined, it has the following effects:
     - `Commands::Set|Enable|Disable` omits the header of the generated configuration files.
+    - Line of code is shown for warnings and errors.
 - `WG_NO_COLOR`: If defined, the show command does not prettify the output with colors.
 
 ## Usage

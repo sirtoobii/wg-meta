@@ -8,8 +8,14 @@ use experimental 'signatures';
 use Test::More;
 
 use Wireguard::WGmeta::Wrapper::Config;
+use Wireguard::WGmeta::Utils;
 
-my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new($FindBin::Bin . '/test_data/');
+use constant TEST_DIR => $FindBin::Bin . '/test_data/';
+
+my $initial_wg0 = read_file(TEST_DIR.'mini_wg0.conf');
+my $initial_wg1 = read_file(TEST_DIR.'mini_wg1.conf');
+
+my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR);
 
 
 # parser tests
@@ -93,11 +99,12 @@ ok $actual eq $expected, 'removed peer, content';
 # test if the alias got removed too
 does_throw('access deleted alias', (sub(@args){$wg_meta->translate_alias(@args)}), ('mini_wg1', 'Alias1'));
 
-# remove interface
-$wg_meta->remove_interface('mini_wg1');
+# remove interface (and keep file)
+$wg_meta->remove_interface('mini_wg1', 1);
 @output = $wg_meta->get_interface_list();
 my @expected = ('mini_wg0');
 ok eq_array(\@output, \@expected), 'remove interface';
+ok -e TEST_DIR.'mini_wg1.conf', 'interface file is still there';
 
 # forwarder test
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 12345, 0, \&_forward);
@@ -127,13 +134,25 @@ does_throw('listen-port nan', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'listen-po
 # does_throw('address invalid', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'address', 'invalid_address', 1));
 
 
-# remove all interface
+# remove all interfaces
 $wg_meta->remove_interface('mini_wg0');
 @output = $wg_meta->get_interface_list();
 @expected = ();
 ok eq_array(\@output, \@expected), 'removed all interfaces';
 
+ok ((not -e TEST_DIR . 'mini_wg0.conf'), 'interface file removed');
+
 done_testing();
+
+# write back initial configs
+open my $fh1, '>', TEST_DIR.'mini_wg1.conf' or die;
+open my $fh2, '>', TEST_DIR.'mini_wg0.conf' or die;
+# write down to file
+print $fh1 $initial_wg1;
+close $fh1;
+# write down to file
+print $fh2 $initial_wg0;
+close $fh2;
 
 
 # helper methods

@@ -17,29 +17,8 @@ use Wireguard::WGmeta::Utils;
 $ENV{'WIREGUARD_HOME'} = TEST_DIR;
 $ENV{'IS_TESTING'} = 1;
 
-my $initial_wg0 = '[Interface]
-Address = 10.0.0.2/24, fdc9:281f:04d7:9ee9::2/64
-ListenPort = 51888
-PrivateKey = WG_0_PEER_B_PRIVATE_KEY
-
-[Peer]
-PublicKey = WG_0_PEER_A_PUBLIC_KEY
-PresharedKey = PEER_A-PEER_B-PRESHARED_KEY
-AllowedIPs = fdc9:281f:04d7:9ee9::1/128
-Endpoint = 198.51.100.101:51871
-';
-my $initial_wg1 = '[Interface]
-Address = 10.0.0.2/24
-ListenPort = 51860
-PrivateKey = WG_1_PEER_B_PRIVATE_KEY
-
-[Peer]
-PublicKey = WG_1_PEER_A_PUBLIC_KEY
-#+Alias = Alias1
-PresharedKey = WG_1_PEER_A-PEER_B-PRESHARED_KEY
-AllowedIPs = 10.0.0.1/32
-Endpoint = 198.51.100.101:51871
-';
+my $initial_wg0 = read_file(TEST_DIR.'mini_wg0.conf');
+my $initial_wg1 = read_file(TEST_DIR.'mini_wg1.conf');
 
 
 # set command

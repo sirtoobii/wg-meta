@@ -6,6 +6,7 @@ use experimental 'signatures';
 use parent 'Wireguard::WGmeta::Cli::Commands::Command';
 
 use Wireguard::WGmeta::Cli::Human;
+use Wireguard::WGmeta::Cli::TerminalHelpers;
 use Wireguard::WGmeta::Wrapper::Config;
 use Wireguard::WGmeta::Wrapper::Show;
 use Wireguard::WGmeta::Wrapper::Bridge;
@@ -17,15 +18,11 @@ use constant WG_CONFIG => 1;
 use constant WG_SHOW => 2;
 use constant NA_PLACEHOLDER => '#na';
 
-use constant BOLD => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[1m" : "";
-use constant RESET => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[0m" : "";
-use constant GREEN => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[32m" : "";
-use constant RED => (!defined($ENV{'WG_NO_COLOR'})) ? "\e[31m" : "";
-
 
 
 sub entry_point($self) {
     # set defaults
+    $self->check_privileges();
     $self->{human_readable} = TRUE;
     $self->{wg_meta_prefix} = '#+';
 
@@ -56,7 +53,7 @@ sub _run_command($self) {
     my $out;
     if (defined $ENV{IS_TESTING}) {
         use FindBin;
-        $out = read_file($FindBin::Bin . '/../t/Data/test/wg_show_dump');
+        $out = read_file($FindBin::Bin . '/../t/test_data/wg_show_dump');
     }
     else {
         my @std_out = run_external('wg show all dump');
@@ -163,7 +160,12 @@ sub _run_command($self) {
         print BOLD . "  State: " . RESET . (($wg_show->iface_exists($iface)) ? GREEN . "UP" : RED . "DOWN") . RESET . "\n";
         print BOLD . "  ListenPort: " . RESET . $interface{'ListenPort'} . "\n";
         # try to derive iface public key from privatekey
-        my $iface_pubkey = do {eval {get_pub_key($interface{PrivateKey})} or "could_not_derive_publickey_from_privatekey"};
+        my $iface_pubkey = do {
+            local $@;
+            eval {
+                get_pub_key($interface{PrivateKey})
+            } or "could_not_derive_publickey_from_privatekey"
+        };
         print BOLD . "  PublicKey: " . RESET . $iface_pubkey . "\n\n";
 
         # Attribute values

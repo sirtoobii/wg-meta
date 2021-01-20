@@ -3,6 +3,7 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
+use Wireguard::WGmeta::Utils;
 use constant WIREGUARD_HOME => '/etc/wireguard/';
 
 sub new($class, @input_arguments) {
@@ -26,6 +27,13 @@ sub entry_point($self) {
 
 sub cmd_help($self) {
     die 'Please instantiate the actual implementation';
+}
+
+sub check_privileges($self) {
+    if (not -w $self->{wireguard_home}) {
+        my $username = getpwuid($<);
+        die "Insufficient privileges - `$username` has rw no permissions to `$self->{wireguard_home}`. You probably forgot `sudo`";
+    }
 }
 
 sub _retrieve_or_die($self, $ref_array, $idx) {

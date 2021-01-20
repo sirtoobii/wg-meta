@@ -14,4 +14,3 @@ cpanfile
 \.perl-version
 configure\.ac
 _Deparsed_XSubs\.pm
-^test\.pl

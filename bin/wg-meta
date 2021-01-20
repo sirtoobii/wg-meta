@@ -65,8 +65,13 @@ use lib "$FindBin::Bin/../thirdparty/lib/perl5";
 use experimental 'signatures';
 
 use Wireguard::WGmeta::Cli::Router;
+use Wireguard::WGmeta::Cli::TerminalHelpers;
 
 our $VERSION = "0.0.0";
+
+local $SIG{__WARN__} = sub($message) {
+    prettify_message($message, 1);
+};
 
 if (@ARGV && $ARGV[0] eq '--version') {
     print "wg-meta v$VERSION - https://github.com/sirtoobii/wg-meta\n";
@@ -74,9 +79,12 @@ if (@ARGV && $ARGV[0] eq '--version') {
 }
 
 # command line argument parser
-route_command(\@ARGV);
-
-
+eval {
+    route_command(\@ARGV);
+};
+if ($@) {
+    prettify_message($@, 0);
+}
 
 
 

@@ -43,7 +43,7 @@ File contents as string
 
 =cut
 sub read_file($path) {
-    open my $fh, '<', $path or die "Can't open file $!";
+    open my $fh, '<', $path or die "Can't open `$path`: $!";
     my $file_content = do {
         local $/;
         <$fh>
