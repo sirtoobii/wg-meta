@@ -9,7 +9,7 @@ use Test::More;
 
 use Wireguard::WGmeta::Wrapper::Config;
 
-my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new($FindBin::Bin . '/Data/test/');
+my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new($FindBin::Bin . '/test_data/');
 
 
 # parser tests

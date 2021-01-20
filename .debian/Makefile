@@ -1,5 +1,7 @@
+PACKAGE_VERSION := $(shell cat ../VERSION)
+
 DEBIAN/control: ../VERSION
-	$(PERL) -i -p -e 's/\d\.\d.\d/'$(PACKAGE_VERSION)'/g;' $@
+	perl -i -p -e 's/\d\.\d.\d/'$(PACKAGE_VERSION)'/g;' $@
 
 copy_files:
 	test -d wg-meta-$(PACKAGE_VERSION) || mkdir wg-meta-$(PACKAGE_VERSION)
