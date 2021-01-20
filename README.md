@@ -76,7 +76,7 @@ sudo wg-meta apply wg0
 ## Under the hood
 
 The main advantage is that this tool is not dependent on any other storage, metadata is stored inside the corresponding
-`wgXX.conf` file (Comments prefixed with `#+`):
+`wgXX.conf` file (Metadata is prefixed with `#+`):
 
 ```text
 [Interface]
