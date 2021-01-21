@@ -35,7 +35,7 @@ C<wg show dump> has to be captured into a string externally (e.g using L<Wiregua
 =head1 METHODS
 
 =cut
-use v5.22;
+use v5.20.0;
 package Wireguard::WGmeta::Wrapper::Show;
 use strict;
 use warnings FATAL => 'all';

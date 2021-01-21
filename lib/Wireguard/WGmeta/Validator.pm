@@ -1,3 +1,9 @@
+=head1 NAME
+
+WGmeta::Validator - A place for all input validation functions
+
+=cut
+
 package Wireguard::WGmeta::Validator;
 use strict;
 use warnings FATAL => 'all';

@@ -1,3 +1,16 @@
+=head1 NAME
+
+Cli::Router - Routes commands to their implementation
+
+=head1 DESCRIPTION
+
+If you want to "register" a new command, do it here. For more information about how an actual implementation should look like
+please refer to L<Wireguard::WGmeta::Cli::Commands::Command>.
+
+=head1 METHODS
+
+=cut
+
 package Wireguard::WGmeta::Cli::Router;
 use strict;
 use warnings FATAL => 'all';
@@ -13,10 +26,18 @@ use Wireguard::WGmeta::Cli::Commands::Add;
 use base 'Exporter';
 our @EXPORT = qw(route_command);
 
-=head3 route_command($ref_list_input_args)
+=head2 route_command($ref_list_input_args)
 
 Routes the cmd (first argument of C<@ARGV>) to their implementation. The case of the commands to not matter.
 Any unknown command is forwarded to L<Wireguard::WGmeta::Cli::Commands::Help>.
+
+To add a new command add this to the C<for> block:
+
+    /^your_cmd$/ && do {
+            Wireguard::WGmeta::Cli::Commands::YourCmd->new(@cmd_args)->entry_point();
+            last;
+        };
+
 
 B<Parameters>
 

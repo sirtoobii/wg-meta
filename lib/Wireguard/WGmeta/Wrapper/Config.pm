@@ -42,7 +42,7 @@ bonus, the parser and encoder are exported ar usable as standalone methods
 
 =cut
 
-use v5.22;
+use v5.20.0;
 package Wireguard::WGmeta::Wrapper::Config;
 use strict;
 use warnings;

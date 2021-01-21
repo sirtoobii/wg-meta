@@ -1,9 +1,25 @@
+=head1 NAME
+
+WGmeta::ValidAttributes - Supported attributes configurations
+
+=head1 DESCRIPTION
+
+In this module all supported attribute names are defined. Currently this only affects
+L<Wireguard::WGmeta::Wrapper::Config/set($interface, $identifier, $attribute, $value [, $allow_non_meta, $forward_function])>
+
+=head1 SYNOPSIS
+
+Add your own attributes to L</WG_META_ADDITIONAL>
+
+=head1 ATTRIBUTE SETS
+
+=cut
+
 package Wireguard::WGmeta::ValidAttributes;
 use strict;
 use warnings FATAL => 'all';
 
 use Wireguard::WGmeta::Validator;
-
 
 # Attribute configurations (do not change, add your own under WG_META_ADDITIONAL)
 use constant WG_META_DEFAULT => {
@@ -25,7 +41,7 @@ use constant WG_META_DEFAULT => {
     }
 };
 
-=head3 WG_META_ADDITIONAL
+=head2 WG_META_ADDITIONAL
 
 Define your custom attributes here in the following format (the wg meta prefix can be omitted here):
 
@@ -37,9 +53,13 @@ Define your custom attributes here in the following format (the wg meta prefix c
         'in_config_name' => 'Other name'
         'validator'      => <function-reference to validator function>,
     }
+
+Validator functions can be defined in L<Wireguard::WGmeta::Validator>
+
 =cut
 use constant WG_META_ADDITIONAL => {};
 
+# wg-quick attributes
 use constant WG_QUICK => {
     'address'     => {
         'in_config_name' => 'Address',
@@ -78,6 +98,8 @@ use constant WG_QUICK => {
         'validator'      => \&accept_any
     }
 };
+
+# attribute names which are valid for the [Interface] sections
 use constant WG_ORIG_INTERFACE => {
     'listen-port' => {
         'in_config_name' => 'ListenPort',
@@ -92,6 +114,8 @@ use constant WG_ORIG_INTERFACE => {
         'validator'      => \&accept_any
     }
 };
+
+# attribute name which are valid for the [Peer] sections
 use constant WG_ORIG_PEER => {
     'public-key'           => {
         'in_config_name' => 'PublicKey',
