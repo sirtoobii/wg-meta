@@ -28,6 +28,10 @@ I<wgXX.conf> file (Metadata is prefixed with I<#+>):
 
 S<Tobias Bossert E<lt>tobib at cpan.orgE<gt>>
 
+=head1 THANKS TO
+
+L<OETIKER+PARTNER AG|https://www.oetiker.ch/> for sponsoring this project.
+
 =head1 COPYRIGHT AND LICENSE
 
 MIT License

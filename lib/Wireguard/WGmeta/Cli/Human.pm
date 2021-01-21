@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-A small collection of utility functions to convert machine-readable out to human friendly
+Cli::Human - A collection of utility functions to make things more human friendly
 
 =head1 METHODS
 

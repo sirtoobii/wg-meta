@@ -2,6 +2,7 @@ AUTHORS
 bin/wg-meta
 CHANGES
 COPYRIGHT
+dist.sh
 lib/Wireguard/WGmeta.pm
 lib/Wireguard/WGmeta/Cli/Commands/Add.pm
 lib/Wireguard/WGmeta/Cli/Commands/Apply.pm

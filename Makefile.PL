@@ -44,6 +44,18 @@ sub MY::postamble {
 bin/wg-meta lib/Wireguard/WGmeta/Wrapper/Config.pm lib/Wireguard/WGmeta/Wrapper/Show.pm: VERSION
 	\$(PERL) -i -p -e 's/\$VERSION\\s*=\\s*"[\\d|\.]*[A-z]*"/\$VERSION = "\$(VERSION)"/;' \$\@
 
+ifeq (\$(EDITOR),)
+EDITOR=/usr/bin/vi
+endif
+
+CHANGES: VERSION
+	echo $self->{VERSION} `date +"%Y-%m-%d %H:%M:%S %z"` `git config user.name` '<'`git config user.email`'>' >> CHANGES.new
+	\@echo >> CHANGES.new
+	\@echo ' -' >> CHANGES.new
+	\@echo >> CHANGES.new
+	\@cat CHANGES >> CHANGES.new && mv CHANGES.new CHANGES
+	\$(EDITOR) CHANGES
+
 EOF
 }
 

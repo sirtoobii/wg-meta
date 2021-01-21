@@ -1,3 +1,6 @@
+0.1.1 2021-01-21 Tobias Bossert (tobib at cpan.org)
+- Small QoL-changes (dist)
+
 0.1.0 2021-01-21 Tobias Bossert (tobib at cpan.org)
 - added: more doc
 - fix: set min version everywhere to v5.20
