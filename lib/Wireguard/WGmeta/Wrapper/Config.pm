@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Wrapper class around the wireguard configuration files
+WGmeta::Wrapper::Config - Class for interfacing the wireguard configs
 
 =head1 SYNOPSIS
 

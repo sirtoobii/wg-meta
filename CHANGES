@@ -1,3 +1,7 @@
+0.1.0 2021-01-21 Tobias Bossert (tobib at cpan.org)
+- added: more doc
+- fix: set min version everywhere to v5.20
+
 0.0.6 2021-01-20 Tobias Bossert (tobib at cpan.org)
 - added: permission check (CLI)
 - added: Pretty errors and warnings (CLI)

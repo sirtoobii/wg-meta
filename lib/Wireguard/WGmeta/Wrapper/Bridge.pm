@@ -1,3 +1,11 @@
+=head1 NAME
+
+WGmeta::Wrapper::Bridge - Interface with shell using (linux only!)
+
+=head1 METHODS
+
+=cut
+
 package Wireguard::WGmeta::Wrapper::Bridge;
 use strict;
 use warnings FATAL => 'all';
@@ -13,7 +21,7 @@ use constant FALSE => 0;
 use constant TRUE => 1;
 
 
-=head3 gen_keypair()
+=head2 gen_keypair()
 
 Runs the C<wg genkey> command and returns a private and the corresponding public-key
 
@@ -29,7 +37,7 @@ sub gen_keypair() {
     chomp @out_pub;
     return $out_priv[0], $out_pub[0];
 }
-=head3 get_pub_key($priv_key)
+=head2 get_pub_key($priv_key)
 
 Runs I<wg pubkey> on C<$priv_key>.
 
@@ -54,7 +62,7 @@ sub get_pub_key($priv_key){
     return $out[0];
 }
 
-=head3 get_wg_show([$cmd])
+=head2 get_wg_show([$cmd])
 
 Runs C<wg show dump> and captures the output into str_out and str_err.
 
@@ -77,7 +85,7 @@ sub get_wg_show($cmd = undef) {
     return @out;
 }
 
-=head3 run_external($command_line [, $input, $soft_fail])
+=head2 run_external($command_line [, $input, $soft_fail])
 
 Runs an external program and throws an exception (or a warning if C<$soft_fail> is true) if the return code is != 0
 

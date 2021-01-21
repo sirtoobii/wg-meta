@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Class for parsing the output of C<wg show dump>.
+WGmeta::Wrapper::Show - Class for parsing the `wg show dump` output
 
 =head1 SYNOPSIS
 
