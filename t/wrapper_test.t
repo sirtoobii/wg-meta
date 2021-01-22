@@ -27,12 +27,22 @@ ok eq_array(\@output, \@interface_list), 'interface_list';
 # sections
 my @sections = ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY');
 @output = $wg_meta->get_section_list('mini_wg0');
-ok eq_array(\@output, \@sections), 'section_list';
+ok eq_array(\@output, \@sections), 'section_list wg0';
+
+@sections = ('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'WG_1_PEER_B_PUBLIC_KEY');
+@output = $wg_meta->get_section_list('mini_wg1');
+ok eq_array(\@output, \@sections), 'section_list wg1';
 
 # section of non existent interface
 @output = $wg_meta->get_section_list('mini_wg0s');
 @sections = ();
 ok eq_array(\@output, \@sections), 'unknown interface';
+
+# n_peers (all)
+ok $wg_meta->get_peer_count() == 3, 'peer count [all]';
+
+# n_peers (one interface)
+ok $wg_meta->get_peer_count('mini_wg1') == 2, 'peer count [wg1]';
 
 # set
 my $expected = '[Interface]
@@ -89,12 +99,22 @@ Address = 10.0.0.2/24
 ListenPort = 51860
 PrivateKey = WG_1_PEER_B_PRIVATE_KEY
 
+[Peer]
+PublicKey = WG_1_PEER_B_PUBLIC_KEY
+#+Alias = Alias2
+PresharedKey = WG_1_PEER_B-PEER_B-PRESHARED_KEY
+AllowedIPs = 10.0.0.2/32
+Endpoint = 198.51.100.102:51871
+
 ';
 
 # remove peer
 $wg_meta->remove_peer('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY');
 $actual = $wg_meta->_create_config('mini_wg1', 1);
 ok $actual eq $expected, 'removed peer, content';
+
+# check peer count after removal
+ok $wg_meta->get_peer_count('mini_wg1') == 1, 'peer count after removal [wg1]';
 
 # test if the alias got removed too
 does_throw('access deleted alias', (sub(@args){$wg_meta->translate_alias(@args)}), ('mini_wg1', 'Alias1'));
@@ -138,7 +158,7 @@ does_throw('listen-port nan', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'listen-po
 $wg_meta->remove_interface('mini_wg0');
 @output = $wg_meta->get_interface_list();
 @expected = ();
-ok eq_array(\@output, \@expected), 'removed all interfaces';
+ok eq_array(\@output, \@expected), 'removed all interfaces [wg0';
 
 ok ((not -e TEST_DIR . 'mini_wg0.conf'), 'interface file removed');
 

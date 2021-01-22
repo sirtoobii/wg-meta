@@ -34,6 +34,13 @@ PresharedKey = WG_1_PEER_A-PEER_B-PRESHARED_KEY
 AllowedIPs = 10.0.6.10/32
 Endpoint = test.tester.com:11234
 
+[Peer]
+PublicKey = WG_1_PEER_B_PUBLIC_KEY
+#+Alias = Alias2
+PresharedKey = WG_1_PEER_B-PEER_B-PRESHARED_KEY
+AllowedIPs = 10.0.0.2/32
+Endpoint = 198.51.100.102:51871
+
 ';
 # mixed cmd line
 my @cmd_line = qw(set mini_wg1 address 10.0.6.0/24 peer WG_1_PEER_A_PUBLIC_KEY endpoint test.tester.com:11234 allowed-ips 10.0.6.10/32);
@@ -57,6 +64,13 @@ AllowedIPs = 10.0.6.11/32
 Endpoint = test.test1.com:8324
 #+Name = set_through_cli
 
+[Peer]
+PublicKey = WG_1_PEER_B_PUBLIC_KEY
+#+Alias = Alias2
+PresharedKey = WG_1_PEER_B-PEER_B-PRESHARED_KEY
+AllowedIPs = 10.0.0.2/32
+Endpoint = 198.51.100.102:51871
+
 ';
 # just peers but also with alias
 @cmd_line = qw(set mini_wg1 peer WG_1_PEER_A_PUBLIC_KEY name set_through_cli allowed-ips 10.0.6.11/32 peer Alias1 endpoint test.test1.com:8324);
@@ -78,6 +92,13 @@ PrivateKey = WG_1_PEER_B_PRIVATE_KEY
 #-Endpoint = test.test1.com:8324
 #-#+Name = set_through_cli
 #-#+Disabled = 1
+
+[Peer]
+PublicKey = WG_1_PEER_B_PUBLIC_KEY
+#+Alias = Alias2
+PresharedKey = WG_1_PEER_B-PEER_B-PRESHARED_KEY
+AllowedIPs = 10.0.0.2/32
+Endpoint = 198.51.100.102:51871
 
 ';
 
@@ -101,6 +122,13 @@ AllowedIPs = 10.0.6.11/32
 Endpoint = test.test1.com:8324
 #+Name = set_through_cli
 #+Disabled = 0
+
+[Peer]
+PublicKey = WG_1_PEER_B_PUBLIC_KEY
+#+Alias = Alias2
+PresharedKey = WG_1_PEER_B-PEER_B-PRESHARED_KEY
+AllowedIPs = 10.0.0.2/32
+Endpoint = 198.51.100.102:51871
 
 ';
 

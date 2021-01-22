@@ -18,8 +18,18 @@ Add your own attributes to L</WG_META_ADDITIONAL>
 package Wireguard::WGmeta::ValidAttributes;
 use strict;
 use warnings FATAL => 'all';
+use experimental 'signatures';
 
 use Wireguard::WGmeta::Validator;
+
+use constant ATTR_TYPE_IS_WG_META => 10;
+use constant ATTR_TYPE_IS_WG_META_CUSTOM => 11;
+use constant ATTR_TYPE_IS_WG_QUICK => 12;
+use constant ATTR_TYPE_IS_WG_ORIG_INTERFACE => 13;
+use constant ATTR_TYPE_IS_WG_ORIG_PEER => 14;
+
+use base 'Exporter';
+our @EXPORT = qw(ATTR_TYPE_IS_WG_META ATTR_TYPE_IS_WG_META_CUSTOM ATTR_TYPE_IS_WG_QUICK ATTR_TYPE_IS_WG_ORIG_INTERFACE ATTR_TYPE_IS_WG_ORIG_PEER get_attr_config);
 
 # Attribute configurations (do not change, add your own under WG_META_ADDITIONAL)
 use constant WG_META_DEFAULT => {
@@ -138,5 +148,48 @@ use constant WG_ORIG_PEER => {
         'validator'      => \&accept_any
     },
 };
+
+sub _create_inverse_mapping() {
+    my $inv_map = {};
+    map {$inv_map->{$_} = ATTR_TYPE_IS_WG_ORIG_PEER;} (keys %{+WG_ORIG_PEER});
+    map {$inv_map->{$_} = ATTR_TYPE_IS_WG_ORIG_INTERFACE;} (keys %{+WG_ORIG_INTERFACE});
+    map {$inv_map->{$_} = ATTR_TYPE_IS_WG_META;} (keys %{+WG_META_DEFAULT});
+    map {$inv_map->{$_} = ATTR_TYPE_IS_WG_META_CUSTOM;} (keys %{+WG_META_ADDITIONAL});
+    map {$inv_map->{$_} = ATTR_TYPE_IS_WG_QUICK;} (keys %{+WG_QUICK});
+    return $inv_map;
+}
+
+sub _create_inconfig_name_mapping() {
+    my $names2key = {};
+    map {$names2key->{WG_ORIG_PEER->{$_}{in_config_name}} = $_;} (keys %{+WG_ORIG_PEER});
+    map {$names2key->{WG_ORIG_INTERFACE->{$_}{in_config_name}} = $_;} (keys %{+WG_ORIG_INTERFACE});
+    map {$names2key->{WG_META_DEFAULT->{$_}{in_config_name}} = $_;} (keys %{+WG_META_DEFAULT});
+    map {$names2key->{WG_META_ADDITIONAL->{$_}{in_config_name}} = $_;} (keys %{+WG_META_ADDITIONAL});
+    map {$names2key->{WG_QUICK->{$_}{in_config_name}} = $_;} (keys %{+WG_QUICK});
+    return $names2key;
+}
+
+use constant INVERSE_ATTR_TYPE_MAPPING => _create_inverse_mapping;
+use constant NAME_2_KEYS_MAPPING => _create_inconfig_name_mapping;
+
+sub get_attr_config($attr_type) {
+    for ($attr_type) {
+        $_ == ATTR_TYPE_IS_WG_ORIG_PEER && do {
+            return WG_ORIG_PEER;
+        };
+        $_ == ATTR_TYPE_IS_WG_ORIG_INTERFACE && do {
+            return WG_ORIG_INTERFACE;
+        };
+        $_ == ATTR_TYPE_IS_WG_META && do {
+            return WG_META_DEFAULT;
+        };
+        $_ == ATTR_TYPE_IS_WG_META_CUSTOM && do {
+            return WG_META_ADDITIONAL;
+        };
+        $_ == ATTR_TYPE_IS_WG_QUICK && do {
+            return WG_QUICK;
+        };
+    }
+}
 
 1;

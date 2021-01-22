@@ -54,6 +54,7 @@ use Wireguard::WGmeta::Wrapper::Bridge;
 use Wireguard::WGmeta::ValidAttributes;
 use Wireguard::WGmeta::Utils;
 use Digest::MD5 qw(md5);
+use List::Util qw(sum);
 
 use base 'Exporter';
 our @EXPORT = qw(read_wg_configs create_wg_config);
@@ -66,11 +67,6 @@ use constant TRUE => 1;
 # constants for states of the config parser
 use constant IS_EMPTY => -1;
 use constant IS_COMMENT => 0;
-use constant IS_WG_META => 1;
-use constant IS_WG_META_ADDITIONAL => 6;
-use constant IS_WG_QUICK => 4;
-use constant IS_WG_ORIG_INTERFACE => 5;
-use constant IS_WG_ORIG_PEER => 7;
 use constant IS_SECTION => 2;
 use constant IS_NORMAL => 3;
 
@@ -174,53 +170,53 @@ None
 
 =cut
 sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FALSE, $forward_function = undef) {
-    my $attr_type = $self->_decide_attr_type($attribute);
+    my $attr_type = _decide_attr_type($attribute);
     if ($self->_is_valid_interface($interface)) {
         if ($self->_is_valid_identifier($interface, $identifier)) {
-            if ($attr_type == IS_WG_META || $attr_type == IS_WG_META_ADDITIONAL) {
+            if ($attr_type == ATTR_TYPE_IS_WG_META || $attr_type == ATTR_TYPE_IS_WG_META_CUSTOM) {
 
                 # Determine source of valid attributes
-                my $target_attribute_name = ($attr_type == IS_WG_META) ? 'wg_meta_attrs' : 'wg_meta_additional_attrs';
+                my $target_attribute_name = ($attr_type == ATTR_TYPE_IS_WG_META) ? 'wg_meta_attrs' : 'wg_meta_additional_attrs';
 
                 # Get the "real" name -> the one which is actually written down in the configuration file
-                my $real_attribute_name = $self->{$target_attribute_name}->{$attribute}{in_config_name};
+                #my $real_attribute_name = $self->{$target_attribute_name}->{$attribute}{in_config_name};
                 unless (attr_value_is_valid($attribute, $value, $self->{$target_attribute_name})) {
                     die "Invalid attribute value `$value` for `$attribute`";
                 }
-                unless (exists $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $real_attribute_name}) {
+                unless (exists $self->{parsed_config}{$interface}{$identifier}{$attribute}) {
                     # the attribute does not (yet) exist in the configuration, lets add it to the list
-                    push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $self->{wg_meta_prefix} . $real_attribute_name;
+                    push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $attribute;
                 }
                 if ($attribute eq 'alias') {
                     $self->_update_alias_map($interface, $identifier, $value);
                 }
                 # the attribute does already exist and therefore we just set it to the new value
-                $self->{parsed_config}{$interface}{$identifier}{$self->{wg_meta_prefix} . $real_attribute_name} = $value;
+                $self->{parsed_config}{$interface}{$identifier}{$attribute} = $value;
                 $self->{has_changed} = TRUE;
             }
             else {
                 if ($allow_non_meta == TRUE) {
                     if (_fits_wg_section($interface, $identifier, $attr_type)) {
                         my $target_attr_type;
-                        if ($attr_type == IS_WG_QUICK) {
+                        if ($attr_type == ATTR_TYPE_IS_WG_QUICK) {
                             $target_attr_type = 'wg_quick_attrs';
                         }
-                        elsif ($attr_type == IS_WG_ORIG_INTERFACE) {
+                        elsif ($attr_type == ATTR_TYPE_IS_WG_ORIG_INTERFACE) {
                             $target_attr_type = 'wg_orig_interface_attrs';
                         }
                         else {
                             $target_attr_type = 'wg_orig_peer_attrs';
                         }
-                        my $real_attribute_name = $self->{$target_attr_type}{$attribute}{in_config_name};
+                        #my $real_attribute_name = $self->{$target_attr_type}{$attribute}{in_config_name};
                         unless (attr_value_is_valid($attribute, $value, $self->{$target_attr_type})) {
                             die "Invalid attribute value `$value` for `$attribute`";
                         }
-                        unless (exists $self->{parsed_config}{$interface}{$identifier}{$real_attribute_name}) {
+                        unless (exists $self->{parsed_config}{$interface}{$identifier}{$attribute}) {
                             # the attribute does not (yet) exist in the configuration, lets add it to the list
-                            push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $real_attribute_name;
+                            push @{$self->{parsed_config}{$interface}{$identifier}{order}}, $attribute;
                         }
                         # the attribute does already exist and therefore we just set it to the new value
-                        $self->{parsed_config}{$interface}{$identifier}{$real_attribute_name} = $value;
+                        $self->{parsed_config}{$interface}{$identifier}{$attribute} = $value;
                         $self->{has_changed} = TRUE;
                     }
                     else {
@@ -251,10 +247,10 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
 sub _fits_wg_section($interface, $identifier, $attr_type) {
     # if we have an interface
     if ($interface eq $identifier) {
-        return $attr_type == IS_WG_ORIG_INTERFACE || $attr_type == IS_WG_QUICK
+        return $attr_type == ATTR_TYPE_IS_WG_ORIG_INTERFACE || $attr_type == ATTR_TYPE_IS_WG_QUICK
     }
     else {
-        return $attr_type == IS_WG_ORIG_PEER;
+        return $attr_type == ATTR_TYPE_IS_WG_ORIG_PEER;
     }
 }
 
@@ -387,21 +383,9 @@ sub _toggle($self, $interface, $identifier, $enable) {
 
 
 # internal method to decide if an attribute is a wg-meta attribute
-sub _decide_attr_type($self, $attr_name) {
-    if (exists $self->{wg_meta_attrs}{$attr_name}) {
-        return IS_WG_META;
-    }
-    elsif (exists $self->{wg_meta_additional_attrs}{$attr_name}) {
-        return IS_WG_META_ADDITIONAL;
-    }
-    elsif (exists $self->{wg_quick_attrs}{$attr_name}) {
-        return IS_WG_QUICK;
-    }
-    elsif (exists $self->{wg_orig_interface_attrs}{$attr_name}) {
-        return IS_WG_ORIG_INTERFACE;
-    }
-    elsif (exists $self->{wg_orig_peer_attrs}{$attr_name}) {
-        return IS_WG_ORIG_PEER;
+sub _decide_attr_type($attr_name) {
+    if (exists Wireguard::WGmeta::ValidAttributes::INVERSE_ATTR_TYPE_MAPPING->{$attr_name}) {
+        return Wireguard::WGmeta::ValidAttributes::INVERSE_ATTR_TYPE_MAPPING->{$attr_name};
     }
     else {
         die "Attribute `$attr_name` is not known";
@@ -496,6 +480,7 @@ Parses all configuration files in C<$wireguard_home> matching I<.*.conf$> and re
             'section_order' => <list_of_available_section_identifiers>,
             'alias_map'     => <mapping_alias_to_identifier>,
             'checksum'      => <calculated_checksum_of_this_interface_config>,
+            'n_peers'       => <number_of_peers_for_this_interface>,
             'a_identifier'    => {
                 'type'  => <'Interface' or 'Peer'>,
                 'order' => <list_of_attributes_in_their_original_order>,
@@ -517,6 +502,11 @@ B<Remarks>
 
 =item *
 
+All attributes listed in L<Wireguard::WGmeta::ValidAttributes> are referenced by their key. This means if you want for
+example access I<PublicKey> the key would be I<public-key>. Any attribute not present in L<Wireguard::WGmeta::ValidAttributes>
+are stored (and written back) as they appear in Config.
+
+=item *
 This method can be used as stand-alone together with the corresponding L</create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix [, $plain = FALSE])>.
 
 =item *
@@ -595,6 +585,7 @@ A reference to a hash with the structure described above.
 =cut
 sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
     my @config_files = read_dir($wireguard_home, qr/.*\.conf$/);
+    my $regex_friendly_meta_prefix = quotemeta $wg_meta_prefix;
 
     if (@config_files == 0) {
         die "No matching interface configuration(s) in " . $wireguard_home;
@@ -614,6 +605,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
 
         my %alias_map;
         my $current_state = -1;
+        my $peer_count = 0;
 
         # state variables
         my $STATE_INIT_DONE = FALSE;
@@ -665,6 +657,9 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
                                 $parsed_wg_config->{$i_name}{$identifier} = $section_data;
                                 $parsed_wg_config->{$i_name}{$identifier}{type} = $section_type;
 
+                                # update peer count if we have type [Peer]
+                                $peer_count++ if ($section_type eq 'Peer');
+
                                 # we have to use a copy of the array here - otherwise the reference stays the same in all sections.
                                 $parsed_wg_config->{$i_name}{$identifier}{order} = [ @section_data_order ];
                                 push @section_order, $identifier;
@@ -698,7 +693,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
                     $section_data->{$comment_id} = $line;
                 }
             }
-            elsif ($current_state == IS_WG_META) {
+            elsif ($current_state == ATTR_TYPE_IS_WG_META) {
                 # a special wg-meta attribute
                 if ($STATE_INIT_DONE == FALSE) {
                     # this is already a wg-meta config and therefore we expect a checksum
@@ -708,7 +703,11 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
                     if ($STATE_READ_SECTION == TRUE) {
                         $STATE_EMPTY_SECTION = FALSE;
                         my ($attr_name, $attr_value) = split_and_trim($line, "=");
-                        if ($attr_name eq $wg_meta_prefix . "Alias") {
+
+                        # remove wg-meta prefix
+                        $attr_name =~ s/^$regex_friendly_meta_prefix//g;
+                        $attr_name = _attr_to_internal_name($attr_name);
+                        if ($attr_name eq 'alias') {
                             if (exists $alias_map{$attr_value}) {
                                 die "Alias '$attr_value' already exists, aborting";
                             }
@@ -728,6 +727,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
                 if ($STATE_READ_SECTION == TRUE) {
                     $STATE_EMPTY_SECTION = FALSE;
                     my ($attr_name, $attr_value) = split_and_trim($line, '=');
+                    $attr_name = _attr_to_internal_name($attr_name);
                     if (_is_identifying($attr_name)) {
                         $STATE_READ_ID = TRUE;
                         if ($section_type eq 'Interface') {
@@ -751,11 +751,13 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
             die 'Section without identifying information found (Private -or PublicKey field'
         }
         else {
+            $peer_count++ if ($section_type eq 'Peer');
             $parsed_wg_config->{$i_name}{$identifier} = $section_data;
             $parsed_wg_config->{$i_name}{$identifier}{type} = $section_type;
             $parsed_wg_config->{$i_name}{checksum} = $checksum;
             $parsed_wg_config->{$i_name}{section_order} = \@section_order;
             $parsed_wg_config->{$i_name}{alias_map} = \%alias_map;
+            $parsed_wg_config->{$i_name}{n_peers} = $peer_count;
 
             $parsed_wg_config->{$i_name}{$identifier}{order} = \@section_data_order;
             push @section_order, $identifier;
@@ -783,7 +785,7 @@ sub _decide_state($line, $comment_prefix, $disabled_prefix) {
     for ($line) {
         /^$/ && return IS_EMPTY;
         /^\[/ && return IS_SECTION;
-        /^\Q${comment_prefix}/ && return IS_WG_META;
+        /^\Q${comment_prefix}/ && return ATTR_TYPE_IS_WG_META;
         /^\Q${disabled_prefix}/ && do {
             $line =~ s/^$disabled_prefix//g;
             # lets do a little bit of recursion here ;)
@@ -805,9 +807,18 @@ sub _is_valid_section($section) {
 # internal method to check if an attribute fulfills identifying properties
 sub _is_identifying($attr_name) {
     return {
-        PrivateKey => 1,
-        PublicKey  => 1
+        'private-key' => 1,
+        'public-key'  => 1
     }->{$attr_name};
+}
+
+sub _attr_to_internal_name($attr_name) {
+    if (exists Wireguard::WGmeta::ValidAttributes::NAME_2_KEYS_MAPPING->{$attr_name}) {
+        return Wireguard::WGmeta::ValidAttributes::NAME_2_KEYS_MAPPING->{$attr_name};
+    }
+    else {
+        return $attr_name;
+    }
 }
 
 =head3 split_and_trim($line, $separator)
@@ -875,20 +886,26 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
     my $new_config = "";
 
     for my $identifier (@{$ref_interface_config->{section_order}}) {
-        if (_is_disabled($ref_interface_config->{$identifier}, $wg_meta_prefix . "Disabled")) {
+        if (_is_disabled($ref_interface_config->{$identifier})) {
             $new_config .= $disabled_prefix;
         }
         # write down [section_type]
         $new_config .= "[$ref_interface_config->{$identifier}{type}]\n";
-        for my $key (@{$ref_interface_config->{$identifier}{order}}) {
-            if (_is_disabled($ref_interface_config->{$identifier}, $wg_meta_prefix . "Disabled")) {
+        for my $attr_name (@{$ref_interface_config->{$identifier}{order}}) {
+            if (_is_disabled($ref_interface_config->{$identifier})) {
                 $new_config .= $disabled_prefix;
             }
-            if (substr($key, 0, 7) eq 'comment') {
-                $new_config .= $ref_interface_config->{$identifier}{$key} . "\n";
+            if (substr($attr_name, 0, 7) eq 'comment') {
+                $new_config .= $ref_interface_config->{$identifier}{$attr_name} . "\n";
             }
             else {
-                $new_config .= $key . " = " . $ref_interface_config->{$identifier}{$key} . "\n";
+                my $attr_type = _decide_attr_type($attr_name);
+                my $meta_prefix = '';
+                if ($attr_type == ATTR_TYPE_IS_WG_META_CUSTOM || $attr_type == ATTR_TYPE_IS_WG_META){
+                    $meta_prefix = $wg_meta_prefix;
+                }
+                $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
+                    . " = " . $ref_interface_config->{$identifier}{$attr_name} . "\n";
             }
         }
         $new_config .= "\n";
@@ -957,9 +974,9 @@ sub commit($self, $is_hot_config = FALSE, $plain = FALSE) {
 }
 
 # internal method to check if a section is disabled
-sub _is_disabled($ref_parsed_config_section, $key) {
-    if (exists $ref_parsed_config_section->{$key}) {
-        return $ref_parsed_config_section->{$key} == TRUE;
+sub _is_disabled($ref_parsed_config_section) {
+    if (exists $ref_parsed_config_section->{disabled}) {
+        return $ref_parsed_config_section->{disabled} == TRUE;
     }
     return FALSE;
 }
@@ -1172,7 +1189,7 @@ sub add_peer($self, $interface, $name, $ip_address, $public_key, $alias = undef,
         $self->{parsed_config}{$interface}{$public_key}{type} = 'Peer';
         # add section to global section list
         push @{$self->{parsed_config}{$interface}{section_order}}, $public_key;
-        return $self->{parsed_config}{$interface}{$interface}{PrivateKey}, $self->{parsed_config}{$interface}{$interface}{ListenPort};
+        return $self->{parsed_config}{$interface}{$interface}{'private-key'}, $self->{parsed_config}{$interface}{$interface}{'listen-port'};
     }
     else {
         die "Invalid interface `$interface`";
@@ -1216,6 +1233,9 @@ sub remove_peer($self, $interface, $identifier) {
 
             # delete from section list
             $self->{parsed_config}{$interface}{section_order} = [ grep {$_ ne $identifier} @{$self->{parsed_config}{$interface}{section_order}} ];
+
+            # decrease peer count
+            $self->{parsed_config}{$interface}{n_peers}--;
 
             # delete alias (if exists)
             while (my ($alias, $a_identifier) = each %{$self->{parsed_config}{$interface}{alias_map}}) {
@@ -1267,6 +1287,41 @@ sub remove_interface($self, $interface, $keep_file = FALSE) {
         if ($keep_file == FALSE) {
             unlink "$self->{wireguard_home}$interface.conf" or warn "Could not delete `$self->{wireguard_home}$interface.conf` do you have the needed permissions?";
         }
+    }
+}
+
+=head3 get_peer_count([$interface = undef])
+
+Returns the number of peers.
+
+B<Caveat:> Does return the count represented  in the current (parsed) configuration state.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<[$interface = undef]> If defined, only return counts for this specific interface
+
+=back
+
+B<Returns>
+
+Number of peers
+
+=cut
+
+sub get_peer_count($self, $interface = undef) {
+    if (defined $interface && $self->_is_valid_interface($interface)) {
+        return $self->{parsed_config}{$interface}{n_peers};
+    }
+    else {
+        my $count = 0;
+        for ($self->get_interface_list()) {
+            $count += $self->{parsed_config}{$_}{n_peers};
+        }
+        return $count;
     }
 }
 
