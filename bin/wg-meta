@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-wg-meta - A CLI interface to manage Wireguard using Perl
+wg-meta - CLI interface to manage Wireguard using Perl
 
 =head1 DESCRIPTION
 

@@ -17,8 +17,8 @@ WGmeta::Wrapper::Show - Class for parsing the `wg show dump` output
 =head1 DESCRIPTION
 
 This class contains a parser for the output of C<wg show dump> together with an interface to retrieve the parsed data.
-An important note tough: This class does not perform the necessary I/O by itself and therefore the actual output of the command
-C<wg show dump> has to be captured into a string externally (e.g using L<Wireguard::WGmeta::Wrapper::Bridge/get_wg_show([$cmd])>).
+An important note: This class does not perform the necessary I/O by itself and therefore the output of the command
+C<wg show dump> has to be captured into a string externally (e.g using L<Wireguard::WGmeta::Wrapper::Bridge/get_wg_show()>).
 
 
 =head1 EXAMPLES
@@ -82,7 +82,7 @@ sub new($class, $wg_show_dump) {
 
 =head3 wg_show_dump_parser($input)
 
-Parser for the output of C<wg show dump>. Aims to create a compatible structure as
+Parser for the output of C<wg show dump>. Aims to create a compatible with:
 L<Wireguard::WGmeta::Wrapper::Config/read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)>:
 
     {
@@ -126,6 +126,8 @@ A reference to a hash with the structure described above.
 sub wg_show_dump_parser($input) {
     my $interface = '';
     my $parsed_show = {};
+
+    # ToDo: Make use of WGmeta::ValidAttributes
     my @keys_interface = qw(interface private-key public-key listen-port fwmark);
     my @keys_peer = qw(interface public-key preshared-key endpoint allowed-ips latest-handshake transfer-rx transfer-tx persistent-keepalive);
     for my $line (split /\n/, $input) {
@@ -196,7 +198,7 @@ B<Parameters>
 
 =item
 
-C<$interface> A valid interface name, optimally retrieved through L</get_interface_list()>.
+C<$interface> A valid interface name, ideally retrieved through L</get_interface_list()>.
 
 =item
 
@@ -228,7 +230,7 @@ B<Parameters>
 
 =item
 
-C<$interface> A valid interface name, optimally retrieved through L</get_interface_list()>.
+C<$interface> A valid interface name, ideally retrieved through L</get_interface_list()>.
 
 =back
 

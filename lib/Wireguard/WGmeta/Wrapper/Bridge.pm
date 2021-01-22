@@ -1,6 +1,6 @@
 =head1 NAME
 
-WGmeta::Wrapper::Bridge - Interface with shell using (linux only!)
+WGmeta::Wrapper::Bridge - Interface with shell using IPC::Open3
 
 =head1 METHODS
 
@@ -39,7 +39,7 @@ sub gen_keypair() {
 }
 =head2 get_pub_key($priv_key)
 
-Runs I<wg pubkey> on C<$priv_key>.
+Runs C<wg pubkey> on C<$priv_key>.
 
 B<Parameters>
 
@@ -62,7 +62,7 @@ sub get_pub_key($priv_key){
     return $out[0];
 }
 
-=head2 get_wg_show([$cmd])
+=head2 get_wg_show()
 
 Runs C<wg show dump> and captures the output into str_out and str_err.
 
@@ -75,11 +75,8 @@ B<Returns>
 First array of STD_OUT
 
 =cut
-sub get_wg_show($cmd = undef) {
-    unless (defined($cmd)) {
-        $cmd = 'wg show dump';
-
-    }
+sub get_wg_show() {
+    my $cmd = 'wg show dump';
     my (@out, undef) = run_external($cmd);
     chomp @out;
     return @out;
@@ -99,7 +96,7 @@ C<$command_line> Complete commandline for the external program to execute.
 
 =item *
 
-C<[$input = undef]> If defined, this is feed into STD_IN of the C<$command_line>.
+C<[$input = undef]> If defined, this is feed into STD_IN of C<$command_line>.
 
 =item *
 
@@ -113,7 +110,7 @@ Exception if return code is not 0 (if C<$soft_fail> is set to true, just a warni
 
 B<Returns>
 
-Returns two lists if all lines of I<STDout> and I<STDerr>
+Returns two lists with all lines of I<STDout> and I<STDerr>
 
 =cut
 sub run_external($command_line, $input = undef, $soft_fail = FALSE) {

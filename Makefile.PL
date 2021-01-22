@@ -26,7 +26,7 @@ WriteMakefile(
         "bin/wg-meta"
     ],
     META_MERGE     => {
-        requires  => { perl => '5.20' },
+        requires  => { perl => '5.020000' },
         resources => {
             license    => 'https://opensource.org/licenses/mit',
             repository => 'https://github.com/sirtoobii/wg-meta',

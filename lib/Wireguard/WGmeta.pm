@@ -8,8 +8,8 @@ An approach to add metadata to the main wireguard config, written in Perl.
 
 =head1 UNDER THE HOOD
 
-The main advantage is that this tool is not dependent on any other storage, metadata is stored inside the corresponding
-I<wgXX.conf> file (Metadata is prefixed with I<#+>):
+Unlike similar projects, this toolkit is not not dependent on any other storage system, metadata is stored dirctly inside the corresponding
+C<wgXX.conf> file (Metadata is prefixed with C<#+>):
 
 	[Interface]
 	#+Alias = some_alias

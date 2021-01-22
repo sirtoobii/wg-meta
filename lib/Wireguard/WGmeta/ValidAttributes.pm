@@ -1,6 +1,6 @@
 =head1 NAME
 
-WGmeta::ValidAttributes - Supported attributes configurations
+WGmeta::ValidAttributes - Supported attribute configurations
 
 =head1 DESCRIPTION
 

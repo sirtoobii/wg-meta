@@ -18,8 +18,8 @@ WGmeta::Wrapper::Config - Class for interfacing the wireguard configs
 =head1 DESCRIPTION
 
 This class serves as wrapper around the Wireguard configurations files.
-It is able to parse, modify, add and write Wireguard .conf files. In addition, support for metadata is built in. As a small
-bonus, the parser and encoder are exported ar usable as standalone methods
+It is able to parse, modify, add and write Wireguard I<.conf> files. In addition, support for metadata is built in. As a small
+bonus, the parser and encoder are exported and usable as standalone methods
 
 =head1 EXAMPLES
 
@@ -35,7 +35,7 @@ bonus, the parser and encoder are exported ar usable as standalone methods
  # disable peer (this comments out the peer in the configuration file
  wg_meta->disable_by_alias('wg0', 'some_fancy_alias');
 
- # write config (if parameter is set to True, the config is overwritten, if set to False the resulting file is suffixed with '_dryrun'
+ # write config (if parameter is set to True, the config is overwritten, if set to False the resulting file is suffixed with '_not_applied'
  wg_meta->commit(1);
 
 =head1 METHODS
@@ -77,7 +77,7 @@ use constant IS_NORMAL => 3;
 
 =head3 new($wireguard_home [, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-'])
 
-Creates a new instance of this class. Default wg-meta attributes: 'Name' and 'Alias'.
+Creates a new instance of this class.
 
 B<Parameters>
 
@@ -155,8 +155,7 @@ C<$attribute> Attribute name (Case does not not matter)
 
 =item *
 
-C<[$allow_non_meta = FALSE]> If set to TRUE, non wg-meta attributes are not forwarded to `wg set`.
-However be extra careful when using this, just the attribute names are validated but not the data!
+C<[$allow_non_meta = FALSE]> If set to TRUE, non wg-meta attributes are not forwarded to C<$forward_function>.
 
 =item *
 
@@ -315,7 +314,7 @@ sub set_by_alias($self, $interface, $alias, $attribute, $value, $allow_non_meta 
 
 =head3 disable($interface, $identifier)
 
-Disables a peer
+Disables an interface/peer (by prefixing C<$wg_meta_disabled_prefix>) and setting the wg-meta attribute `Disabled` to C<1>.
 
 B<Parameters>
 
@@ -535,7 +534,7 @@ However, does only exist if this section has been enabled/disabled once.
 
 =item *
 
-To check wether a file is actually a Wireguard interface config, the parser first checks the presence of the string
+To check whether a file is actually a Wireguard interface config, the parser first checks the presence of the string
 I<[Interface]>. If not present, the file is skipped (without warning!).
 
 =back
@@ -1109,8 +1108,6 @@ sub add_interface($self, $interface_name, $ip_address, $listen_port, $private_ke
 =head3 add_peer($interface, $name, $ip_address, $public_key [, $alias, $preshared_key])
 
 Adds a peer to an exiting interface.
-
-B<Caveat:> No validation is performed on the values!
 
 B<Parameters>
 
