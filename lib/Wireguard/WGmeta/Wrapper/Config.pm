@@ -388,7 +388,7 @@ sub _decide_attr_type($attr_name) {
         return Wireguard::WGmeta::ValidAttributes::INVERSE_ATTR_TYPE_MAPPING->{$attr_name};
     }
     else {
-        die "Attribute `$attr_name` is not known";
+        return ATTR_TYPE_IS_UNKNOWN;
     }
 }
 
@@ -901,11 +901,16 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
             else {
                 my $attr_type = _decide_attr_type($attr_name);
                 my $meta_prefix = '';
-                if ($attr_type == ATTR_TYPE_IS_WG_META_CUSTOM || $attr_type == ATTR_TYPE_IS_WG_META){
+                if ($attr_type == ATTR_TYPE_IS_WG_META_CUSTOM || $attr_type == ATTR_TYPE_IS_WG_META) {
                     $meta_prefix = $wg_meta_prefix;
                 }
-                $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
-                    . " = " . $ref_interface_config->{$identifier}{$attr_name} . "\n";
+                unless ($attr_type == ATTR_TYPE_IS_UNKNOWN) {
+                    $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
+                        . " = " . $ref_interface_config->{$identifier}{$attr_name} . "\n";
+                } else {
+                    $new_config .= "$attr_name = $ref_interface_config->{$identifier}{$attr_name}";
+                }
+
             }
         }
         $new_config .= "\n";

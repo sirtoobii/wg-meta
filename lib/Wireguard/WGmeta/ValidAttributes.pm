@@ -4,8 +4,10 @@ WGmeta::ValidAttributes - Supported attribute configurations
 
 =head1 DESCRIPTION
 
-In this module all supported attribute names are defined. Currently this only affects
-L<Wireguard::WGmeta::Wrapper::Config/set($interface, $identifier, $attribute, $value [, $allow_non_meta, $forward_function])>
+In this module all supported attributes are configured (and as well their possible validation function). Attributes configured
+here affect how the parser stores them and which attributes are supported by the
+L<Wireguard::WGmeta::Wrapper::Config/set($interface, $identifier, $attribute, $value [, $allow_non_meta, $forward_function])>.
+
 
 =head1 SYNOPSIS
 
@@ -27,9 +29,19 @@ use constant ATTR_TYPE_IS_WG_META_CUSTOM => 11;
 use constant ATTR_TYPE_IS_WG_QUICK => 12;
 use constant ATTR_TYPE_IS_WG_ORIG_INTERFACE => 13;
 use constant ATTR_TYPE_IS_WG_ORIG_PEER => 14;
+use constant ATTR_TYPE_IS_UNKNOWN => 15;
 
 use base 'Exporter';
-our @EXPORT = qw(ATTR_TYPE_IS_WG_META ATTR_TYPE_IS_WG_META_CUSTOM ATTR_TYPE_IS_WG_QUICK ATTR_TYPE_IS_WG_ORIG_INTERFACE ATTR_TYPE_IS_WG_ORIG_PEER get_attr_config);
+our @EXPORT = qw(
+    ATTR_TYPE_IS_WG_META
+    ATTR_TYPE_IS_WG_META_CUSTOM
+    ATTR_TYPE_IS_WG_QUICK
+    ATTR_TYPE_IS_WG_ORIG_INTERFACE
+    ATTR_TYPE_IS_WG_ORIG_PEER
+    ATTR_TYPE_IS_UNKNOWN
+    get_attr_config
+    decide_attr_type
+);
 
 # Attribute configurations (do not change, add your own under WG_META_ADDITIONAL)
 use constant WG_META_DEFAULT => {
@@ -189,6 +201,15 @@ sub get_attr_config($attr_type) {
         $_ == ATTR_TYPE_IS_WG_QUICK && do {
             return WG_QUICK;
         };
+    }
+}
+
+sub decide_attr_type($attr_name) {
+    if (exists INVERSE_ATTR_TYPE_MAPPING->{$attr_name}) {
+        return INVERSE_ATTR_TYPE_MAPPING->{$attr_name};
+    }
+    else {
+        die "Attribute `$attr_name` is not known";
     }
 }
 
