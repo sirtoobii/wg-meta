@@ -85,7 +85,11 @@ L<Wireguard::WGmeta::Wrapper::Config> - Class for reading/writing and modifying 
 
 =item *
 
-L<Wireguard::WGmeta::Wrapper::Show> - Class for parsing the output of C<wg show dump>
+L<Wireguard::WGmeta::Wrapper::Show> - Class for parsing the output of C<wg show dump>.
+
+=item *
+
+L<Wireguard::WGmeta::ValidAttributes> - Configurations for all supported attributes.
 
 =back
 
@@ -94,6 +98,10 @@ L<Wireguard::WGmeta::Wrapper::Show> - Class for parsing the output of C<wg show 
 =head1 AUTHORS
 
 S<Tobias Bossert E<lt>tobib at cpan.orgE<gt>>
+
+=head1 THANKS TO
+
+L<OETIKER+PARTNER AG|https://www.oetiker.ch/> for sponsoring this project.
 
 =head1 COPYRIGHT AND LICENSE
 

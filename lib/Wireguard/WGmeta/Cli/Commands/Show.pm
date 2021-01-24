@@ -19,7 +19,7 @@ use constant FALSE => 0;
 sub new($class, @input_arguments) {
     my $self = $class->SUPER::new(@input_arguments);
 
-
+    # list of attributes shown in output. Prefix attributes originating from `wg-show` using `#S#`.
     my @attr_list = (
         'name',
         'alias',
@@ -32,11 +32,11 @@ sub new($class, @input_arguments) {
         'disabled'
     );
 
+    # register attribute converters here (no special prefix needed)
     my %attr_converters = (
         'latest-handshake' => \&timestamp2human,
         'transfer-rx'      => \&bits2human,
-        'transfer-tx'      => \&bits2human,
-        'disabled'         => \&disabled2human
+        'transfer-tx'      => \&bits2human
     );
 
     $self->{'attr_converters'} = \%attr_converters;
@@ -47,11 +47,10 @@ sub new($class, @input_arguments) {
 }
 
 sub entry_point($self) {
-    # set defaults
     $self->check_privileges();
 
+    # set defaults
     my $len = @{$self->{input_args}};
-
     if ($len > 0) {
         if ($self->_retrieve_or_die($self->{input_args}, 0) eq 'help') {
             $self->cmd_help();
@@ -71,7 +70,7 @@ sub entry_point($self) {
 
 sub _run_command($self) {
     my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
-    if (exists $self->{interface} && !$wg_meta->_is_valid_interface($self->{interface})) {
+    if (exists $self->{interface} && !$wg_meta->is_valid_interface($self->{interface})) {
         die "Invalid interface `$self->{interface}`";
     }
     my $out;
@@ -157,6 +156,8 @@ sub _print_section($self, $ref_config_section, $ref_show_section) {
             # wg_show
             if (defined($ref_show_section) && exists $ref_show_section->{$attr_copy}) {
                 my $cleaned_attr = $ref_show_section->{$attr_copy};
+
+                # check if a converter function is defined
                 if (exists $self->{attr_converters}{$attr_copy}){
                     $cleaned_attr = $self->{attr_converters}{$attr_copy}($cleaned_attr);
                 }

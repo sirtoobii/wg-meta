@@ -170,9 +170,9 @@ None
 
 =cut
 sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FALSE, $forward_function = undef) {
-    my $attr_type = _decide_attr_type($attribute);
-    if ($self->_is_valid_interface($interface)) {
-        if ($self->_is_valid_identifier($interface, $identifier)) {
+    my $attr_type = decide_attr_type($attribute, TRUE);
+    if ($self->is_valid_interface($interface)) {
+        if ($self->is_valid_identifier($interface, $identifier)) {
             if ($attr_type == ATTR_TYPE_IS_WG_META || $attr_type == ATTR_TYPE_IS_WG_META_CUSTOM) {
 
                 # Determine source of valid attributes
@@ -381,24 +381,53 @@ sub _toggle($self, $interface, $identifier, $enable) {
     $self->set($interface, $identifier, 'disabled', $enable);
 }
 
+=head3 is_valid_interface($interface)
 
-# internal method to decide if an attribute is a wg-meta attribute
-sub _decide_attr_type($attr_name) {
-    if (exists Wireguard::WGmeta::ValidAttributes::INVERSE_ATTR_TYPE_MAPPING->{$attr_name}) {
-        return Wireguard::WGmeta::ValidAttributes::INVERSE_ATTR_TYPE_MAPPING->{$attr_name};
-    }
-    else {
-        return ATTR_TYPE_IS_UNKNOWN;
-    }
-}
+Checks if an interface name is valid (present in parsed config)
 
-# internal method to check whether an interface is valid
-sub _is_valid_interface($self, $interface) {
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> An interface name
+
+=back
+
+B<Returns>
+
+True if present, undef if not.
+
+=cut
+sub is_valid_interface($self, $interface) {
     return (exists $self->{parsed_config}{$interface});
 }
 
-# internal method to check whether an identifier is valid inside an interface
-sub _is_valid_identifier($self, $interface, $identifier) {
+=head3 is_valid_identifier($interface, $identifier)
+
+Checks if an identifier is valid for a given interface
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> An interface name
+
+=item
+
+C<$identifier> An identifier (no alias!)
+
+=back
+
+B<Returns>
+
+True if present, undef if not.
+
+=cut
+sub is_valid_identifier($self, $interface, $identifier) {
     return (exists $self->{parsed_config}{$interface}{$identifier});
 }
 
@@ -502,9 +531,9 @@ B<Remarks>
 
 =item *
 
-All attributes listed in L<Wireguard::WGmeta::ValidAttributes> are referenced by their key. This means if you want for
+All attributes listed in L<Wireguard::WGmeta::ValidAttributes> are referenced by their key. This means, if you want for
 example access I<PublicKey> the key would be I<public-key>. Any attribute not present in L<Wireguard::WGmeta::ValidAttributes>
-are stored (and written back) as they appear in Config.
+is stored (and written back) as they appear in Config.
 
 =item *
 This method can be used as stand-alone together with the corresponding L</create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix [, $plain = FALSE])>.
@@ -899,7 +928,7 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
                 $new_config .= $ref_interface_config->{$identifier}{$attr_name} . "\n";
             }
             else {
-                my $attr_type = _decide_attr_type($attr_name);
+                my $attr_type = decide_attr_type($attr_name, TRUE);
                 my $meta_prefix = '';
                 if ($attr_type == ATTR_TYPE_IS_WG_META_CUSTOM || $attr_type == ATTR_TYPE_IS_WG_META) {
                     $meta_prefix = $wg_meta_prefix;
@@ -908,7 +937,7 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
                     $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
                         . " = " . $ref_interface_config->{$identifier}{$attr_name} . "\n";
                 } else {
-                    $new_config .= "$attr_name = $ref_interface_config->{$identifier}{$attr_name}";
+                    $new_config .= "$attr_name = $ref_interface_config->{$identifier}{$attr_name}\n";
                 }
 
             }
@@ -1111,7 +1140,7 @@ None
 
 =cut
 sub add_interface($self, $interface_name, $ip_address, $listen_port, $private_key) {
-    if ($self->_is_valid_interface($interface_name)) {
+    if ($self->is_valid_interface($interface_name)) {
         die "Interface `$interface_name` already exists";
     }
     my %interface = (
@@ -1173,8 +1202,8 @@ A tuple consisting of the iface private-key and listen port
 =cut
 sub add_peer($self, $interface, $name, $ip_address, $public_key, $alias = undef, $preshared_key = undef) {
     # generate new key pair if not defined
-    if ($self->_is_valid_interface($interface)) {
-        if ($self->_is_valid_identifier($interface, $public_key)) {
+    if ($self->is_valid_interface($interface)) {
+        if ($self->is_valid_identifier($interface, $public_key)) {
             die "An interface with this public-key already exists on `$interface`";
         }
         # generate peer config
@@ -1229,9 +1258,9 @@ None
 
 =cut
 sub remove_peer($self, $interface, $identifier) {
-    if ($self->_is_valid_interface($interface)) {
+    if ($self->is_valid_interface($interface)) {
         $identifier = $self->try_translate_alias($interface, $identifier);
-        if ($self->_is_valid_identifier($interface, $identifier)) {
+        if ($self->is_valid_identifier($interface, $identifier)) {
 
             # delete section
             delete $self->{parsed_config}{$interface}{$identifier};
@@ -1286,7 +1315,7 @@ None
 
 =cut
 sub remove_interface($self, $interface, $keep_file = FALSE) {
-    if ($self->_is_valid_interface($interface)) {
+    if ($self->is_valid_interface($interface)) {
         # delete interface
         delete $self->{parsed_config}{$interface};
         if ($keep_file == FALSE) {
@@ -1318,7 +1347,7 @@ Number of peers
 =cut
 
 sub get_peer_count($self, $interface = undef) {
-    if (defined $interface && $self->_is_valid_interface($interface)) {
+    if (defined $interface && $self->is_valid_interface($interface)) {
         return $self->{parsed_config}{$interface}{n_peers};
     }
     else {
