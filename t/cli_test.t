@@ -143,13 +143,8 @@ ok $actual eq $expected, 'and enable again peer';
 done_testing();
 
 # write back initial configs
-open my $fh1, '>', TEST_DIR.'mini_wg1.conf' or die;
-open my $fh2, '>', TEST_DIR.'mini_wg0.conf' or die;
-# write down to file
-print $fh1 $initial_wg1;
-close $fh1;
-# write down to file
-print $fh2 $initial_wg0;
-close $fh2;
+my ($filename_1, $filename_2) = (TEST_DIR.'mini_wg1.conf', TEST_DIR.'mini_wg0.conf');
+write_file($filename_1, $initial_wg1);
+write_file($filename_2, $initial_wg0);
 
 1;

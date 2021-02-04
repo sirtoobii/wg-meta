@@ -127,7 +127,6 @@ sub wg_show_dump_parser($input) {
     my $interface = '';
     my $parsed_show = {};
 
-    # ToDo: Make use of WGmeta::ValidAttributes
     my @keys_interface = qw(interface private-key public-key listen-port fwmark);
     my @keys_peer = qw(interface public-key preshared-key endpoint allowed-ips latest-handshake transfer-rx transfer-tx persistent-keepalive);
     for my $line (split /\n/, $input) {

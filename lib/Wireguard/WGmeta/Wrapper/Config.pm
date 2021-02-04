@@ -19,7 +19,25 @@ WGmeta::Wrapper::Config - Class for interfacing the wireguard configs
 
 This class serves as wrapper around the Wireguard configurations files.
 It is able to parse, modify, add and write Wireguard I<.conf> files. In addition, support for metadata is built in. As a small
-bonus, the parser and encoder are exported and usable as standalone methods
+bonus, the parser and encoder are exported and usable as standalone methods.
+
+=head1 CONCURRENCY
+
+To ensure that no inconsistent config files are generated, calls to a C<get_*()> may result in a reload from disk - namely
+when the config file on disk is newer than the current (parsed) one. So keep in mind to C<commit()> as soon as possible
+(this is obviously only true for environments where such situations are possible to occur)
+
+ # thread/process A
+ $wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'A');
+
+ # thread/process B
+ $wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'B');
+ $wg_meta->commit(1);
+
+ # thread/process A (alias 'A' is overwritten by 'B')
+ wg_meta->disable_by_alias('wg0', 'A'); # throws exception `invalid alias`!
+
+For more details about the reloading behaviour please refer to L</_may_reload_from_disk([$interface = undef])>.
 
 =head1 EXAMPLES
 
@@ -30,7 +48,7 @@ bonus, the parser and encoder are exported and usable as standalone methods
  wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', '<attribute_name>', '<attribute_value>');
 
  # set an alias for a peer
- wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'Alias', 'some_fancy_alias');
+ wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'some_fancy_alias');
 
  # disable peer (this comments out the peer in the configuration file
  wg_meta->disable_by_alias('wg0', 'some_fancy_alias');
@@ -47,14 +65,15 @@ package Wireguard::WGmeta::Wrapper::Config;
 use strict;
 use warnings;
 use experimental 'signatures';
-use Data::Dumper;
-use Time::Piece;
 use File::Basename;
 use Wireguard::WGmeta::Wrapper::Bridge;
 use Wireguard::WGmeta::ValidAttributes;
 use Wireguard::WGmeta::Utils;
 use Digest::MD5 qw(md5);
+use Digest::SHA qw(sha1_hex);
 use List::Util qw(sum);
+use Time::HiRes qw(stat);
+use Fcntl qw(O_CREAT O_EXCL O_RDWR O_WRONLY);
 
 use base 'Exporter';
 our @EXPORT = qw(read_wg_configs create_wg_config);
@@ -63,6 +82,10 @@ our $VERSION = "0.0.0"; # do not change manually, this variable is updated when 
 
 use constant FALSE => 0;
 use constant TRUE => 1;
+use constant INTEGRITY_HASH_SALT => 'wefnwioefh9032ur3';
+use constant LOCK_SH => 1;
+use constant LOCK_EX => 2;
+use constant LOCK_UN => 8;
 
 # constants for states of the config parser
 use constant IS_EMPTY => -1;
@@ -94,11 +117,6 @@ C<[, $wg_meta_disabled_prefix]> A custom prefix for the commented out (disabled)
 has to begin with either `;` or `#` and must not be equal with C<$wg_meta_prefix>! (This is enforced and an exception is thrown if violated)
 It is recommended to not change this setting, especially in a ready deployed installation.
 
-=item *
-
-C<[, $ref_hash_additional_attrs]> A reference to a list containing additional wg-meta attributes, the intersect of this list
-with the default attributes defines the "valid wg-meta attributes".
-
 =back
 
 B<Returns>
@@ -112,12 +130,13 @@ sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefi
         die '`$wg_meta_prefix` and `$wg_meta_disabled_prefix` have to be different';
     }
 
+    my ($config_files, $count) = get_all_conf_files($wireguard_home);
     my $self = {
         'wireguard_home'           => $wireguard_home,
         'wg_meta_prefix'           => $wg_meta_prefix,
         'wg_meta_disabled_prefix'  => $wg_meta_disabled_prefix,
-        'has_changed'              => FALSE,
-        'parsed_config'            => read_wg_configs($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix),
+        'n_conf_files'             => $count,
+        'parsed_config'            => read_wg_configs($config_files, $wg_meta_prefix, $wg_meta_disabled_prefix),
         'wg_meta_attrs'            => Wireguard::WGmeta::ValidAttributes::WG_META_DEFAULT,
         'wg_meta_additional_attrs' => Wireguard::WGmeta::ValidAttributes::WG_META_ADDITIONAL,
         'wg_orig_interface_attrs'  => Wireguard::WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
@@ -126,6 +145,98 @@ sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefi
     };
     bless $self, $class;
     return $self;
+}
+
+sub _get_mtime($path) {
+    my @stat = stat($path);
+    return (defined($stat[9])) ? "$stat[9]" : "0";
+
+}
+
+=head3 _may_reload_from_disk([$interface = undef])
+
+This method is called before any data is returned from one of the C<get_*()> methods. It behaves as follows:
+
+=over 1
+
+=item *
+
+If the interface is not defined, it loops through the known interfaces and reloads them individually (if needed).
+
+=item *
+
+If the interface is defined (and known), the modify timestamps are compared an if the on-disk version is newer, a reload is triggered.
+
+=item *
+
+If the interface is defined (but not known -> this could be the case if a new interface has been added), first we check if there is
+actually a matching config file on disk and if yes, its loaded and parsed from disk.
+
+=back
+
+Remark: This method is not meant for public access, there is just this extensive documentation block since its behaviour
+is crucial to the function of this wrapper class.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> A (possibly) invalid (or new) interface name
+
+=back
+
+B<Returns>
+
+None
+
+=cut
+sub _may_reload_from_disk($self, $interface = undef) {
+    unless (defined $interface) {
+        for my $known_interface ($self->get_interface_list()) {
+            if ($self->_get_my_mtime($known_interface) lt _get_mtime($self->{parsed_config}{$known_interface}{config_path})) {
+                $self->reload_from_disk($known_interface);
+            }
+        }
+    }
+    elsif (exists $self->{parsed_config}{$interface}) {
+        if ($self->_get_my_mtime($interface) lt _get_mtime($self->{parsed_config}{$interface}{config_path})) {
+            $self->reload_from_disk($interface);
+        }
+    }
+    else {
+        # we may have a new interface added in the meantime so we probe if there is actually a config file first
+        if (-e $self->{wireguard_home} . $interface . '.conf') {
+            $self->reload_from_disk($interface, TRUE);
+        }
+    }
+
+}
+
+sub _get_my_mtime($self, $interface) {
+    if (exists $self->{parsed_config}{$interface}) {
+        return $self->{parsed_config}{$interface}{mtime};
+    }
+    else {
+        return 0;
+    }
+}
+
+sub _is_latest_data($self, $interface) {
+    my $conf_path = $self->{wireguard_home} . $interface . ".conf";
+    my $t = $self->_get_my_mtime($interface);
+    my $s = _get_mtime($conf_path);
+    return $self->_get_my_mtime($interface) ge _get_mtime($conf_path);
+}
+
+sub calculate_sha1_from_section($ref_to_hash) {
+    my %h = %{$ref_to_hash};
+    return sha1_hex INTEGRITY_HASH_SALT . join '', map {$h{$_}} @{$ref_to_hash->{order}};
+}
+
+sub calculate_sha_from_internal($self, $interface, $identifier) {
+    return calculate_sha1_from_section($self->{parsed_config}{$interface}{$identifier});
 }
 
 =head3 set($interface, $identifier, $attribute, $value [, $allow_non_meta, $forward_function])
@@ -162,7 +273,7 @@ is expected: C<forward_fun($interface, $identifier, $attribute, $value)>
 
 B<Raises>
 
-Exception if either the interface or identifier is invalid
+Exception if either the interface or identifier is invalid or B<the config file on disk is newer than this parsed config!>
 
 B<Returns>
 
@@ -190,9 +301,7 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                 if ($attribute eq 'alias') {
                     $self->_update_alias_map($interface, $identifier, $value);
                 }
-                # the attribute does already exist and therefore we just set it to the new value
                 $self->{parsed_config}{$interface}{$identifier}{$attribute} = $value;
-                $self->{has_changed} = TRUE;
             }
             else {
                 if ($allow_non_meta == TRUE) {
@@ -207,7 +316,6 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                         else {
                             $target_attr_type = 'wg_orig_peer_attrs';
                         }
-                        #my $real_attribute_name = $self->{$target_attr_type}{$attribute}{in_config_name};
                         unless (attr_value_is_valid($attribute, $value, $self->{$target_attr_type})) {
                             die "Invalid attribute value `$value` for `$attribute`";
                         }
@@ -217,7 +325,6 @@ sub set($self, $interface, $identifier, $attribute, $value, $allow_non_meta = FA
                         }
                         # the attribute does already exist and therefore we just set it to the new value
                         $self->{parsed_config}{$interface}{$identifier}{$attribute} = $value;
-                        $self->{has_changed} = TRUE;
                     }
                     else {
                         die "The supplied attribute `$attribute` is not valid for this section type (this most likely means you've tried to set a peer attribute in the interface section or vice-versa)";
@@ -401,6 +508,7 @@ True if present, undef if not.
 
 =cut
 sub is_valid_interface($self, $interface) {
+    $self->_scan_for_new_interfaces();
     return (exists $self->{parsed_config}{$interface});
 }
 
@@ -428,6 +536,7 @@ True if present, undef if not.
 
 =cut
 sub is_valid_identifier($self, $interface, $identifier) {
+    $self->_may_reload_from_disk($interface);
     return (exists $self->{parsed_config}{$interface}{$identifier});
 }
 
@@ -459,6 +568,7 @@ A valid identifier.
 
 =cut
 sub translate_alias($self, $interface, $alias) {
+    $self->_may_reload_from_disk($interface);
     if (exists $self->{parsed_config}{$interface}{alias_map}{$alias}) {
         return $self->{parsed_config}{$interface}{alias_map}{$alias};
     }
@@ -492,12 +602,41 @@ If the alias is valid for the specified interface, the corresponding identifier 
 
 =cut
 sub try_translate_alias($self, $interface, $may_alias) {
+    $self->_may_reload_from_disk($interface);
     if (exists $self->{parsed_config}{$interface}{alias_map}{$may_alias}) {
         return $self->{parsed_config}{$interface}{alias_map}{$may_alias};
     }
     else {
         return $may_alias;
     }
+}
+
+=head3 get_all_conf_files($wireguard_home)
+
+Returns a list of all files in C<$wireguard_home> matching I<r/.*\.conf$/>.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$wireguard_home> Path to a folder where wireguard configuration files are located
+
+=back
+
+B<Returns>
+
+A reference to a list with absolute paths to the config files (possibly empty)
+
+=cut
+sub get_all_conf_files($wireguard_home) {
+    my @config_files = read_dir($wireguard_home, qr/.*\.conf$/);
+    if (@config_files == 0) {
+        die "No matching interface configuration(s) in " . $wireguard_home;
+    }
+    my $count = @config_files;
+    return \@config_files, $count;
 }
 
 =head3 read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)
@@ -510,6 +649,8 @@ Parses all configuration files in C<$wireguard_home> matching I<.*.conf$> and re
             'alias_map'     => <mapping_alias_to_identifier>,
             'checksum'      => <calculated_checksum_of_this_interface_config>,
             'n_peers'       => <number_of_peers_for_this_interface>,
+            'mtime'         => <when_was_the_config_file_modified_last>,
+            'conf_path'     => <absolute_path_to_config_file>,
             'a_identifier'    => {
                 'type'  => <'Interface' or 'Peer'>,
                 'order' => <list_of_attributes_in_their_original_order>,
@@ -565,7 +706,7 @@ B<Parameters>
 
 =item *
 
-C<$wireguard_home> Path to wireguard configuartion files
+C<$ref_config_files> Reference to array with paths to wireguard configuration files. Can be conveniently obtained by calling L</get_all_conf_files($wireguard_home)>
 
 =item *
 
@@ -574,6 +715,10 @@ C<$wg_meta_prefix> wg-meta prefix. Must start with '#' or ';'
 =item *
 
 C<$disabled_prefix> disabled prefix. Must start with '#' or ';'
+
+=item *
+
+C<[$use_checksum = TRUE]> If set to False, checksum is not checked
 
 =back
 
@@ -612,25 +757,29 @@ B<Returns>
 A reference to a hash with the structure described above.
 
 =cut
-sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
-    my @config_files = read_dir($wireguard_home, qr/.*\.conf$/);
+sub read_wg_configs($ref_config_files, $wg_meta_prefix, $disabled_prefix, $use_checksum = TRUE, $ext_fh = undef, $ref_array_interface_names = undef) {
     my $regex_friendly_meta_prefix = quotemeta $wg_meta_prefix;
 
-    if (@config_files == 0) {
-        die "No matching interface configuration(s) in " . $wireguard_home;
-    }
+    die 'Got `$ext_fh = 1` without defining `$ref_array_interface_names` ' if (defined $ext_fh && !defined $ref_array_interface_names);
 
-    # create file-handle
     my $parsed_wg_config = {};
-    for my $config_path (@config_files) {
+    my $_index = 0;
+    for my $config_path (@{$ref_config_files}) {
+
+        # First, lets read the entire file to verify its actually wireguard config file
+        my $config_file_contents = read_file($config_path, $ext_fh);
+        next unless ($config_file_contents =~ /\[Interface\]/);
 
         # read interface name
-        my $i_name = basename($config_path);
-        $i_name =~ s/\.conf//g;
-
-        # First, lets read the entrie file to verify its actually wireguard config file
-        my $config_file_contents = read_file($config_path);
-        next unless ($config_file_contents =~ /\[Interface\]/);
+        my $i_name;
+        if (defined $ext_fh) {
+            $i_name = @{$ref_array_interface_names}[$_index];
+        }
+        else {
+            $i_name = basename($config_path);
+            $i_name =~ s/\.conf$//;
+        }
+        my $config_mtime = _get_mtime($config_path);
 
         my %alias_map;
         my $current_state = -1;
@@ -660,7 +809,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
             # remove disabled prefix if any
             $line =~ s/^$disabled_prefix//g;
 
-            if ($current_state == -1) {
+            if ($current_state == IS_EMPTY) {
                 # empty line
             }
             elsif ($current_state == IS_SECTION) {
@@ -777,7 +926,7 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
         }
         # store last section
         if ($STATE_READ_ID == FALSE) {
-            die 'Section without identifying information found (Private -or PublicKey field'
+            die "Section without identifying information found (Private -or PublicKey field) in config file `$i_name`";
         }
         else {
             $peer_count++ if ($section_type eq 'Peer');
@@ -787,6 +936,8 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
             $parsed_wg_config->{$i_name}{section_order} = \@section_order;
             $parsed_wg_config->{$i_name}{alias_map} = \%alias_map;
             $parsed_wg_config->{$i_name}{n_peers} = $peer_count;
+            $parsed_wg_config->{$i_name}{mtime} = $config_mtime;
+            $parsed_wg_config->{$i_name}{config_path} = $config_path;
 
             $parsed_wg_config->{$i_name}{$identifier}{order} = \@section_data_order;
             push @section_order, $identifier;
@@ -798,29 +949,32 @@ sub read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix) {
         #print Dumper(\@section_order);
         #print Dumper($parsed_wg_config);
         # checksum
-        my $current_hash = _compute_checksum(create_wg_config($parsed_wg_config->{$i_name}, $wg_meta_prefix, $disabled_prefix, TRUE));
-        if ($checksum ne '' && "$current_hash" ne $checksum) {
-            warn "Config `$i_name.conf` has been changed by an other program or user. This is just a warning.";
+        unless ($use_checksum == FALSE) {
+            my $current_hash = _compute_checksum(create_wg_config($i_name, $parsed_wg_config->{$i_name}, $wg_meta_prefix, $disabled_prefix, TRUE));
+            if ($checksum ne '' && "$current_hash" ne $checksum) {
+                warn "Config `$i_name.conf` has been changed by an other program or user. This is just a warning.";
+            }
         }
+        $_index++;
     }
 
-    return ($parsed_wg_config);
+    return $parsed_wg_config;
 }
 
 # internal method to decide that current state using a line of input
 sub _decide_state($line, $comment_prefix, $disabled_prefix) {
-    #remove leading and tailing white space
-    $line =~ s/^\s+|\s+$//g;
+    #remove leading white space
+    $line =~ s/^\s+//;
     for ($line) {
-        /^$/ && return IS_EMPTY;
-        /^\[/ && return IS_SECTION;
+        $_ eq '' && return IS_EMPTY;
+        (substr $_, 0, 1) eq '[' && return IS_SECTION;
         /^\Q${comment_prefix}/ && return ATTR_TYPE_IS_WG_META;
         /^\Q${disabled_prefix}/ && do {
             $line =~ s/^$disabled_prefix//g;
             # lets do a little bit of recursion here ;)
             return _decide_state($line, $comment_prefix, $disabled_prefix);
         };
-        /^#/ && return IS_COMMENT;
+        (substr $_, 0, 1) eq '#' && return IS_COMMENT;
         return IS_NORMAL;
     }
 }
@@ -874,7 +1028,7 @@ Two strings. With example values given in the parameters this would be 'This' an
 
 =cut
 sub split_and_trim($line, $separator) {
-    return map {s/^\s+|\s+$//g;
+    return map {s/^\s+|\s+$//;
         $_} split $separator, $line, 2;
 }
 
@@ -911,21 +1065,52 @@ B<Returns>
 A string, ready to be written down as a config file.
 
 =cut
-sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $plain = FALSE) {
+sub create_wg_config($interface, $ref_current_internal_config, $wg_meta_prefix, $disabled_prefix, $plain = FALSE, $ref_on_disk_config = undef, $ref_hash_integrity_keys = undef) {
     my $new_config = "";
+    my $reference_config = $ref_current_internal_config;
+    if (defined $ref_on_disk_config) {
+        $reference_config = $ref_on_disk_config->{$interface};
+    }
 
-    for my $identifier (@{$ref_interface_config->{section_order}}) {
-        if (_is_disabled($ref_interface_config->{$identifier})) {
+    for my $identifier (@{$reference_config->{section_order}}) {
+        my $section_data = $ref_current_internal_config->{$identifier};
+        if (defined $ref_on_disk_config) {
+            my $t = $ref_current_internal_config->{$identifier};
+            my $s = $ref_on_disk_config->{$interface}{$identifier};
+            my $on_disk_sha = calculate_sha1_from_section($ref_on_disk_config->{$interface}{$identifier});
+            my $internal_sha = calculate_sha1_from_section($ref_current_internal_config->{$identifier});
+            if ($on_disk_sha ne $internal_sha) {
+                # we may have a hash which allows us to modify
+                if (defined $ref_hash_integrity_keys && exists $ref_hash_integrity_keys->{$identifier}) {
+                    if ($on_disk_sha eq $ref_hash_integrity_keys->{$identifier}) {
+                        # take from internal
+                        $section_data = $ref_current_internal_config->{$identifier};
+                    }
+                    else {
+                        warn "your changes for `$identifier` were not applied";
+                        $section_data = $ref_on_disk_config->{$interface}{$identifier}
+                    }
+                }else {
+                    # take from disk
+                    $section_data = $ref_on_disk_config->{$interface}{$identifier}
+                }
+            }
+            else {
+                # take from disk
+                $section_data = $ref_on_disk_config->{$interface}{$identifier}
+            }
+        }
+        if (_is_disabled($section_data)) {
             $new_config .= $disabled_prefix;
         }
         # write down [section_type]
-        $new_config .= "[$ref_interface_config->{$identifier}{type}]\n";
-        for my $attr_name (@{$ref_interface_config->{$identifier}{order}}) {
-            if (_is_disabled($ref_interface_config->{$identifier})) {
+        $new_config .= "[$section_data->{type}]\n";
+        for my $attr_name (@{$section_data->{order}}) {
+            if (_is_disabled($section_data)) {
                 $new_config .= $disabled_prefix;
             }
             if (substr($attr_name, 0, 7) eq 'comment') {
-                $new_config .= $ref_interface_config->{$identifier}{$attr_name} . "\n";
+                $new_config .= $section_data->{$attr_name} . "\n";
             }
             else {
                 my $attr_type = decide_attr_type($attr_name, TRUE);
@@ -935,9 +1120,10 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
                 }
                 unless ($attr_type == ATTR_TYPE_IS_UNKNOWN) {
                     $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
-                        . " = " . $ref_interface_config->{$identifier}{$attr_name} . "\n";
-                } else {
-                    $new_config .= "$attr_name = $ref_interface_config->{$identifier}{$attr_name}\n";
+                        . " = " . $section_data->{$attr_name} . "\n";
+                }
+                else {
+                    $new_config .= "$attr_name = $section_data->{$attr_name}\n";
                 }
 
             }
@@ -964,7 +1150,16 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
 
 =head3 commit([$is_hot_config = FALSE, $plain = FALSE])
 
-Writes down the parsed config to the wireguard configuration folder
+Writes down the parsed config to the wireguard configuration folder.
+Does have an exclusive lock on the file while writing!
+
+B<Caveat> The is a very small chance for a race condition:
+
+    $self->_die_if_not_latest_data($interface);
+    ...
+    # an other instance starts writing somewhere between these lines
+    ...
+    write_file($file_name, $new_config); # ->BOOM!
 
 B<Parameters>
 
@@ -987,22 +1182,53 @@ Exception if: Folder or file is not writeable
 
 B<Returns>
 
-
 None
 
 =cut
-sub commit($self, $is_hot_config = FALSE, $plain = FALSE) {
-    for my $interface (keys %{$self->{parsed_config}}) {
-        my $new_config = create_wg_config($self->{parsed_config}{$interface}, $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix}, $plain);
-        my $fh;
+sub commit($self, $is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_keys = undef) {
+    for my $interface_name (keys %{$self->{parsed_config}}) {
+        my $file_name;
         if ($is_hot_config == TRUE) {
-            open $fh, '>', $self->{wireguard_home} . $interface . '.conf' or die $!;
+            $file_name = $self->{parsed_config}{$interface_name}{config_path};
         }
         else {
-            open $fh, '>', $self->{wireguard_home} . $interface . '.conf_not_applied' or die $!;
+            $file_name = $self->{parsed_config}{$interface_name}{config_path} . '_not_applied';
         }
+        my $on_disk_config = undef;
+        my $fh;
+
+        # check if interface exists - if not, we have a new interface
+        if (-e $self->{parsed_config}{$interface_name}{config_path}) {
+
+            # in this case open the file for RW
+            open $fh, '+<', $self->{parsed_config}{$interface_name}{config_path};
+            flock $fh, LOCK_EX;
+            unless ($self->_is_latest_data($interface_name)) {
+                $on_disk_config = read_wg_configs([ $fh ], $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix}, FALSE, TRUE, [ $interface_name ]);
+            }
+            else {
+                open $fh, '>', $self->{parsed_config}{$interface_name}{config_path};
+                flock $fh, LOCK_EX;
+            }
+        }
+        else {
+            open $fh, '>', $self->{parsed_config}{$interface_name}{config_path};
+            flock $fh, LOCK_EX;
+        }
+        seek $fh, 0, 0;
+        truncate $fh, 0;
+        my $new_config = create_wg_config(
+            $interface_name,
+            $self->{parsed_config}{$interface_name},
+            $self->{wg_meta_prefix},
+            $self->{wg_meta_disabled_prefix},
+            $plain,
+            $on_disk_config,
+            $ref_hash_integrity_keys
+        );
         # write down to file
         print $fh $new_config;
+        $self->{parsed_config}{$interface_name}{mtime} = _get_mtime($self->{parsed_config}{$interface_name}{config_path});
         close $fh;
     }
 }
@@ -1023,7 +1249,7 @@ sub _compute_checksum($input) {
 
 =head3 get_interface_list()
 
-Return a list of all interfaces
+Return a list of all interfaces. This is also the place where new interfaces are detected.
 
 B<Returns>
 
@@ -1031,7 +1257,21 @@ A list of all valid interface names. If no interfaces are available, an empty li
 
 =cut
 sub get_interface_list($self) {
+    $self->_scan_for_new_interfaces();
     return sort keys %{$self->{parsed_config}};
+}
+
+sub _scan_for_new_interfaces($self) {
+    # check if theres maybe a new interface by comparing the file counts
+    my ($conf_files, $count) = get_all_conf_files($self->{wireguard_home});
+    if ($self->{n_conf_files} != $count) {
+        for my $conf_path (@{$conf_files}) {
+            # read interface name
+            my $i_name = basename($conf_path);
+            $i_name =~ s/\.conf$//;
+            $self->_may_reload_from_disk($i_name);
+        }
+    }
 }
 
 =head3 get_interface_section($interface, $identifier)
@@ -1058,8 +1298,11 @@ A hash containing the requested section. If the requested section/interface is n
 
 =cut
 sub get_interface_section($self, $interface, $identifier) {
+    $self->_may_reload_from_disk($interface);
     if (exists $self->{parsed_config}{$interface}{$identifier}) {
-        return %{$self->{parsed_config}{$interface}{$identifier}};
+        my %r = %{$self->{parsed_config}{$interface}{$identifier}};
+        $r{integrity_hash} = calculate_sha1_from_section($self->{parsed_config}{$interface}{$identifier});
+        return %r;
     }
     else {
         return ();
@@ -1086,6 +1329,7 @@ A list of all sections of an interface. If interface is not present, an empty li
 
 =cut
 sub get_section_list($self, $interface) {
+    $self->_may_reload_from_disk($interface);
     if (exists $self->{parsed_config}{$interface}) {
         return @{$self->{parsed_config}{$interface}{section_order}};
     }
@@ -1154,6 +1398,8 @@ sub add_interface($self, $interface_name, $ip_address, $listen_port, $private_ke
     $self->{parsed_config}{$interface_name}{alias_map} = {};
     $self->{parsed_config}{$interface_name}{section_order} = [ $interface_name ];
     $self->{parsed_config}{$interface_name}{checksum} = 'none';
+    $self->{parsed_config}{$interface_name}{mtime} = 0.0;
+    $self->{parsed_config}{$interface_name}{config_path} = $self->{wireguard_home} . $interface_name . '.conf';
 }
 
 =head3 add_peer($interface, $name, $ip_address, $public_key [, $alias, $preshared_key])
@@ -1299,10 +1545,6 @@ B<Parameters>
 
 C<$interface> A valid interface name
 
-=item
-
-C<$keep_file = FALSE> If set to True, an empty file is left behind.
-
 =back
 
 B<Raises>
@@ -1314,13 +1556,12 @@ B<Returns>
 None
 
 =cut
-sub remove_interface($self, $interface, $keep_file = FALSE) {
+sub remove_interface($self, $interface) {
     if ($self->is_valid_interface($interface)) {
         # delete interface
         delete $self->{parsed_config}{$interface};
-        if ($keep_file == FALSE) {
-            unlink "$self->{wireguard_home}$interface.conf" or warn "Could not delete `$self->{wireguard_home}$interface.conf` do you have the needed permissions?";
-        }
+        unlink "$self->{wireguard_home}$interface.conf" or warn "Could not delete `$self->{wireguard_home}$interface.conf` do you have the needed permissions?";
+        $self->{n_conf_files}--;
     }
 }
 
@@ -1345,8 +1586,8 @@ B<Returns>
 Number of peers
 
 =cut
-
 sub get_peer_count($self, $interface = undef) {
+    $self->_may_reload_from_disk($interface);
     if (defined $interface && $self->is_valid_interface($interface)) {
         return $self->{parsed_config}{$interface}{n_peers};
     }
@@ -1356,6 +1597,19 @@ sub get_peer_count($self, $interface = undef) {
             $count += $self->{parsed_config}{$_}{n_peers};
         }
         return $count;
+    }
+}
+
+sub reload_from_disk($self, $interface, $new = FALSE) {
+    if ($new == FALSE) {
+        $self->{parsed_config}{$interface} = read_wg_configs([ $self->{parsed_config}{$interface}{config_path} ], $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix}, FALSE)->{$interface};
+    }
+    else {
+        my $maybe_new_config = read_wg_configs([ $self->{wireguard_home} . $interface . '.conf' ], $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix}, FALSE);
+        if (%{$maybe_new_config}) {
+            $self->{n_conf_files}++;
+            $self->{parsed_config}{$interface} = $maybe_new_config->{$interface};
+        }
     }
 }
 
@@ -1369,7 +1623,9 @@ sub _add_to_hash_if_defined($ref_hash, $key, $value) {
 
 # internal method to create a configuration file (this method exists primarily for testing purposes)
 sub _create_config($self, $interface, $plain = FALSE) {
+    $self->_may_reload_from_disk();
     return create_wg_config(
+        $interface,
         $self->{parsed_config}{$interface},
         $self->{wg_meta_prefix},
         $self->{disabled_prefix},
@@ -1382,6 +1638,7 @@ Simple dumper method to print contents of C<< $self->{parsed_config} >>.
 
 =cut
 sub dump($self) {
+    use Data::Dumper;
     print Dumper $self->{parsed_config};
 }
 

@@ -41,12 +41,13 @@ sub MY::postamble {
     my $self = shift;
     return <<"EOF";
 
-bin/wg-meta lib/Wireguard/WGmeta/Wrapper/Config.pm lib/Wireguard/WGmeta/Wrapper/Show.pm: VERSION
+bin/wg-meta lib/Wireguard/WGmeta/Wrapper/Config.pm lib/Wireguard/WGmeta/Wrapper/Show.pm lib/Wireguard/WGmeta.pm: VERSION
 	\$(PERL) -i -p -e 's/\$VERSION\\s*=\\s*"[\\d|\.]*[A-z]*"/\$VERSION = "\$(VERSION)"/;' \$\@
 
-ifeq (\$(EDITOR),)
-EDITOR=/usr/bin/vi
-endif
+# # Unfortunately, this is (gnu-)make specific...
+# ifeq (\$(EDITOR),)
+# EDITOR=/usr/bin/vi
+# endif
 
 CHANGES: VERSION
 	echo $self->{VERSION} `date +"%Y-%m-%d %H:%M:%S %z"` `git config user.name` '<'`git config user.email`'>' >> CHANGES.new

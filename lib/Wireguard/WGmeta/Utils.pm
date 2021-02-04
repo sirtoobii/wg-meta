@@ -3,8 +3,12 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 use base 'Exporter';
-our @EXPORT = qw(read_dir read_file generate_ip_list);
+our @EXPORT = qw(read_dir read_file write_file generate_ip_list);
 
+use constant LOCK_SH => 1;
+use constant LOCK_EX => 2;
+
+use Scalar::Util qw (openhandle);
 
 sub read_dir($path, $pattern) {
     opendir(DIR, $path) or die "Could not open $path\n";
@@ -21,7 +25,7 @@ sub read_dir($path, $pattern) {
 
 =head3 read_file($path)
 
-Reads a file given by a C<$path> into a string
+Reads a file given by a C<$path> into a string. Applies a shared lock on the file while reading
 
 B<Parameters>
 
@@ -42,13 +46,63 @@ B<Returns>
 File contents as string
 
 =cut
-sub read_file($path) {
-    open my $fh, '<', $path or die "Can't open `$path`: $!";
+sub read_file($path, $path_is_fh = undef) {
+    my $fh;
+    unless (defined $path_is_fh) {
+        open $fh, '<', $path or die "Can't open `$path`: $!";
+        # try to get a shared lock
+        flock $fh, LOCK_SH or die "Could not get shared lock on file `$path`: $!";
+    } else {
+        $fh = $path;
+    }
     my $file_content = do {
         local $/;
         <$fh>
     };
+    close $fh unless (defined $path_is_fh);
     return $file_content;
+}
+
+=head3 write_file($path, $content)
+
+Writes C<$content> to C<$file> while having an exclusive lock.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$path> Path to file
+
+=item
+
+C<$content> File content
+
+=back
+
+B<Returns>
+
+None
+
+=cut
+sub write_file($path, $content, $path_is_fh = undef) {
+    my $fh;
+    unless (defined $path_is_fh) {
+        open $fh, '>', $path or die "Could not open `$path` for writing: $!";
+
+        # try to get an exclusive lock
+        flock $fh, LOCK_EX or die "Could not get an exclusive lock on file `$path`: $!";
+    } else {
+        $fh = $path;
+    }
+    my $s = openhandle($fh);
+    my $p = tell($fh);
+    if ($p != 0){
+        print "fatal";
+    }
+    print $fh $content;
+    close $fh unless (defined $path_is_fh);
 }
 
 sub generate_ip_list($network_id, $subnet_size) {
@@ -62,7 +116,7 @@ sub generate_ip_list($network_id, $subnet_size) {
 
     while ($start_decimal <= $end_decimal) {
         my @bytes = unpack 'CCCC', pack 'N', $start_decimal;
-        my $ipv4 = (join '.', @bytes).'/32' ;
+        my $ipv4 = (join '.', @bytes) . '/32';
         $ip_list{$ipv4} = undef;
         $start_decimal++;
     }
