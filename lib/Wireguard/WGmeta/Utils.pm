@@ -2,8 +2,10 @@ package Wireguard::WGmeta::Utils;
 use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
+use Time::HiRes qw(stat);
+use Digest::MD5 qw(md5);
 use base 'Exporter';
-our @EXPORT = qw(read_dir read_file write_file generate_ip_list);
+our @EXPORT = qw(read_dir read_file write_file generate_ip_list get_mtime compute_md5_checksum);
 
 use constant LOCK_SH => 1;
 use constant LOCK_EX => 2;
@@ -103,6 +105,16 @@ sub write_file($path, $content, $path_is_fh = undef) {
     }
     print $fh $content;
     close $fh unless (defined $path_is_fh);
+}
+
+sub get_mtime($path) {
+    my @stat = stat($path);
+    return (defined($stat[9])) ? "$stat[9]" : "0";
+}
+
+sub compute_md5_checksum($input) {
+    my $str = substr(md5($input), 0, 4);
+    return unpack 'L', $str; # Convert to 4-byte integer
 }
 
 sub generate_ip_list($network_id, $subnet_size) {
