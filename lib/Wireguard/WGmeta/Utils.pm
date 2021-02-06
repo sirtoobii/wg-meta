@@ -98,11 +98,6 @@ sub write_file($path, $content, $path_is_fh = undef) {
     } else {
         $fh = $path;
     }
-    my $s = openhandle($fh);
-    my $p = tell($fh);
-    if ($p != 0){
-        print "fatal";
-    }
     print $fh $content;
     close $fh unless (defined $path_is_fh);
 }

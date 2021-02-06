@@ -3,6 +3,7 @@ use strict;
 use warnings FATAL => 'all';
 use Digest::SHA qw(sha1_hex);
 use Fcntl qw(:flock);
+use File::Basename;
 use experimental 'signatures';
 
 use Wireguard::WGmeta::Wrapper::Config;
@@ -65,6 +66,11 @@ sub get_all_conf_files($wireguard_home) {
     }
     my $count = @config_files;
     return \@config_files, $count;
+}
+
+sub get_interface_list($self) {
+    $self->_scan_for_new_interfaces();
+    return sort keys %{$self->{parsed_config}};
 }
 
 =head3 commit([$is_hot_config = FALSE, $plain = FALSE])
@@ -161,9 +167,29 @@ sub create_wg_configT($self, $interface, $plain = FALSE, $ref_on_disk_config = u
     if (defined $ref_on_disk_config) {
         $reference_config = $ref_on_disk_config->{$interface};
     }
+    my @may_conflict;
+    my @exclusive_disk;
+    my @exclusive_internal;
+    if (defined $ref_on_disk_config) {
+        for my $identifier_internal (@{$self->{parsed_config}{$interface}{section_order}}) {
+            if (exists $ref_on_disk_config->{$interface}{$identifier_internal}) {
+                push @may_conflict, $identifier_internal;
+            }
+            else {
+                push @exclusive_internal, $identifier_internal;
+            }
+        }
+        for my $identifier_ondisk (@{$ref_on_disk_config->{$interface}{section_order}}) {
+            unless (exists $self->{parsed_config}{$interface}{$identifier_ondisk}) {
+                push @exclusive_disk, $identifier_ondisk;
+            }
+        }
+    }
+    else {
+        @may_conflict = @{$self->{parsed_config}{$interface}{section_order}};
+    }
 
-    # ToDo: Scan for new sections on both references
-    for my $identifier (@{$reference_config->{section_order}}) {
+    for my $identifier (@may_conflict) {
         my $section_data = $ref_current_internal_config->{$identifier};
         if (defined $ref_on_disk_config) {
             my $on_disk_sha = calculate_sha1_from_section($ref_on_disk_config->{$interface}{$identifier});
@@ -190,36 +216,12 @@ sub create_wg_configT($self, $interface, $plain = FALSE, $ref_on_disk_config = u
                 $section_data = $ref_on_disk_config->{$interface}{$identifier}
             }
         }
-        if (_is_disabled($section_data)) {
-            $new_config .= $self->{wg_meta_disabled_prefix};
-        }
-        # write down [section_type]
-        $new_config .= "[$section_data->{type}]\n";
-        for my $attr_name (@{$section_data->{order}}) {
-            if (_is_disabled($section_data)) {
-                $new_config .= $self->{wg_meta_disabled_prefix};
-            }
-            if (substr($attr_name, 0, 7) eq 'comment') {
-                $new_config .= $section_data->{$attr_name} . "\n";
-            }
-            else {
-                my $attr_type = decide_attr_type($attr_name, TRUE);
-                my $meta_prefix = '';
-                if ($attr_type == ATTR_TYPE_IS_WG_META_CUSTOM || $attr_type == ATTR_TYPE_IS_WG_META) {
-                    $meta_prefix = $self->{wg_meta_prefix};
-                }
-                unless ($attr_type == ATTR_TYPE_IS_UNKNOWN) {
-                    $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
-                        . " = " . $section_data->{$attr_name} . "\n";
-                }
-                else {
-                    $new_config .= "$attr_name = $section_data->{$attr_name}\n";
-                }
+        $new_config .= $self->_create_section($section_data);
 
-            }
-        }
-        $new_config .= "\n";
     }
+    # exclusive mode
+    $new_config .= join '', map{$self->_create_section($self->{parsed_config}{$interface}{$_});} @exclusive_internal;
+    $new_config .= join '', map{$self->_create_section($ref_on_disk_config->{$interface}{$_});} @exclusive_disk;
     if ($plain == FALSE) {
         my $new_hash = compute_md5_checksum($new_config);
         my $config_header = "# This config is generated and maintained by wg-meta.\n"
@@ -236,6 +238,40 @@ sub create_wg_configT($self, $interface, $plain = FALSE, $ref_on_disk_config = u
     else {
         return $new_config;
     }
+}
+
+sub _create_section($self, $section_data) {
+    my $new_config;
+    if (_is_disabled($section_data)) {
+        $new_config .= $self->{wg_meta_disabled_prefix};
+    }
+    # write down [section_type]
+    $new_config .= "[$section_data->{type}]\n";
+    for my $attr_name (@{$section_data->{order}}) {
+        if (_is_disabled($section_data)) {
+            $new_config .= $self->{wg_meta_disabled_prefix};
+        }
+        if (substr($attr_name, 0, 7) eq 'comment') {
+            $new_config .= $section_data->{$attr_name} . "\n";
+        }
+        else {
+            my $attr_type = decide_attr_type($attr_name, TRUE);
+            my $meta_prefix = '';
+            if ($attr_type == ATTR_TYPE_IS_WG_META_CUSTOM || $attr_type == ATTR_TYPE_IS_WG_META) {
+                $meta_prefix = $self->{wg_meta_prefix};
+            }
+            unless ($attr_type == ATTR_TYPE_IS_UNKNOWN) {
+                $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
+                    . " = " . $section_data->{$attr_name} . "\n";
+            }
+            else {
+                $new_config .= "$attr_name = $section_data->{$attr_name}\n";
+            }
+
+        }
+    }
+    $new_config .= "\n";
+    return $new_config;
 }
 
 =head3 _may_reload_from_disk([$interface = undef])
@@ -280,13 +316,17 @@ None
 sub _may_reload_from_disk($self, $interface = undef) {
     unless (defined $interface) {
         for my $known_interface ($self->get_interface_list()) {
-            if ($self->_get_my_mtime($known_interface) lt get_mtime($self->{parsed_config}{$known_interface}{config_path})) {
+            # my $s = $self->_get_my_mtime($known_interface);
+            # my $t = get_mtime($self->{parsed_config}{$known_interface}{config_path});
+            if ($self->_get_my_mtime($known_interface) < get_mtime($self->{parsed_config}{$known_interface}{config_path})) {
                 $self->reload_from_disk($known_interface);
             }
         }
     }
     elsif (exists $self->{parsed_config}{$interface}) {
-        if ($self->_get_my_mtime($interface) lt get_mtime($self->{parsed_config}{$interface}{config_path})) {
+        # my $s = $self->_get_my_mtime($interface);
+        # my $t = get_mtime($self->{parsed_config}{$interface}{config_path});
+        if ($self->_get_my_mtime($interface) < get_mtime($self->{parsed_config}{$interface}{config_path})) {
             $self->reload_from_disk($interface);
         }
     }
@@ -334,6 +374,7 @@ sub _is_disabled($ref_parsed_config_section) {
 }
 
 sub calculate_sha1_from_section($ref_to_hash) {
+    my $s = 'wefwef';
     my %h = %{$ref_to_hash};
     return sha1_hex INTEGRITY_HASH_SALT . join '', map {$h{$_}} @{$ref_to_hash->{order}};
 }

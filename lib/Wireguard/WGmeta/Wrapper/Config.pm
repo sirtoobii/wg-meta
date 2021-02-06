@@ -81,7 +81,6 @@ our $VERSION = "0.0.0"; # do not change manually, this variable is updated when 
 
 use constant FALSE => 0;
 use constant TRUE => 1;
-use constant INTEGRITY_HASH_SALT => 'wefnwioefh9032ur3';
 use constant LOCK_SH => 1;
 use constant LOCK_EX => 2;
 use constant LOCK_UN => 8;
@@ -995,7 +994,8 @@ sub create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix, $
                 unless ($attr_type == ATTR_TYPE_IS_UNKNOWN) {
                     $new_config .= $meta_prefix . get_attr_config($attr_type)->{$attr_name}{in_config_name}
                         . " = " . $ref_interface_config->{$identifier}{$attr_name} . "\n";
-                } else {
+                }
+                else {
                     $new_config .= "$attr_name = $ref_interface_config->{$identifier}{$attr_name}\n";
                 }
 
@@ -1194,9 +1194,9 @@ None
 
 =cut
 sub add_interface($self, $interface_name, $ip_address, $listen_port, $private_key) {
-    if ($self->is_valid_interface($interface_name)) {
-        die "Interface `$interface_name` already exists";
-    }
+    # if ($self->is_valid_interface($interface_name)) {
+    #     die "Interface `$interface_name` already exists";
+    # }
     my %interface = (
         'Address'    => $ip_address,
         'ListenPort' => $listen_port,
