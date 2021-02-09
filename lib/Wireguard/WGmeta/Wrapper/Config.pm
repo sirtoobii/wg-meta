@@ -10,7 +10,7 @@ WGmeta::Wrapper::Config - Class for interfacing the wireguard configs
  my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new('<path to wireguard configuration>');
 
  # or when you need just the parser component
- my $hash_parsed_configs = read_wg_configs('/etc/wireguard/', '#+', '#-');
+ my $hash_parsed_configs = read_wg_configs(['/etc/wireguard/wg0.conf', '/etc/wireguard/wg1.conf'], '#+', '#-');
 
  # and similarly to transform the parsed config into a wireguard compatible format again
  my $wg0_config = create_wg_config($hash_parsed_configs{wg0}, '#+', '#-')
@@ -23,21 +23,7 @@ bonus, the parser and encoder are exported and usable as standalone methods.
 
 =head1 CONCURRENCY
 
-To ensure that no inconsistent config files are generated, calls to a C<get_*()> may result in a reload from disk - namely
-when the config file on disk is newer than the current (parsed) one. So keep in mind to C<commit()> as soon as possible
-(this is obviously only true for environments where such situations are possible to occur)
-
- # thread/process A
- $wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'A');
-
- # thread/process B
- $wg_meta->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'B');
- $wg_meta->commit(1);
-
- # thread/process A (alias 'A' is overwritten by 'B')
- wg_meta->disable_by_alias('wg0', 'A'); # throws exception `invalid alias`!
-
-For more details about the reloading behaviour please refer to L</_may_reload_from_disk([$interface = undef])>.
+Please refer to L<Wireguard::WGmeta::Wrapper::ConfigT>
 
 =head1 EXAMPLES
 
@@ -541,9 +527,9 @@ sub get_all_conf_files($wireguard_home) {
     return \@config_files, $count;
 }
 
-=head3 read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)
+=head3 read_wg_configs($ref_config_files, $wg_meta_prefix, $disabled_prefix [, $use_checksum = TRUE, $ext_fh = undef, $ref_array_interface_names = undef])
 
-Parses all configuration files in C<$wireguard_home> matching I<.*.conf$> and returns a hash with the following structure:
+Parses all configuration files listed in C<$ref_config_files> and returns a hash with the following structure:
 
     {
         'interface_name' => {
@@ -568,6 +554,12 @@ Parses all configuration files in C<$wireguard_home> matching I<.*.conf$> and re
             [...]
         }
     }
+
+B<Advanced usage>
+
+Instead of a list of paths C<ref_config_files> can also contain a list of open filehandles.
+This allows of external control over locks. Please note, when using in this "advanced mode" B<all> optional arguments are
+mandatory!
 
 B<Remarks>
 
@@ -609,7 +601,9 @@ B<Parameters>
 
 =item *
 
-C<$ref_config_files> Reference to array with paths to wireguard configuration files. Can be conveniently obtained by calling L</get_all_conf_files($wireguard_home)>
+C<$ref_config_files> Reference to array with paths to wireguard configuration files.
+Can be conveniently obtained by calling L</get_all_conf_files($wireguard_home)>. If using in advanced mode, this list can also
+contain a list of open filehandles.
 
 =item *
 
@@ -622,6 +616,14 @@ C<$disabled_prefix> disabled prefix. Must start with '#' or ';'
 =item *
 
 C<[$use_checksum = TRUE]> If set to False, checksum is not checked
+
+=item *
+
+C<[$ext_fh = undef]> Set to True when the list conatins filehandles
+
+=item *
+
+C<[$ref_array_interface_names = undef]> List of interface names, only needed when the filehandles are external.
 
 =back
 
@@ -642,6 +644,10 @@ If a config files is not readable.
 =item *
 
 If the parser ends up in an invalid state (e.g a section without information).
+
+=item *
+
+Incompatible set of arguments (advanced mode).
 
 =back
 
@@ -939,7 +945,7 @@ sub split_and_trim($line, $separator) {
 =head3 create_wg_config($ref_interface_config, $wg_meta_prefix, $disabled_prefix [, $plain = FALSE])
 
 Turns a reference of interface-config hash (just a single interface)
-(as defined in L</read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)>) back into a wireguard config.
+(as defined in L</read_wg_configs($ref_config_files, $wg_meta_prefix, $disabled_prefix [, $use_checksum = TRUE, $ext_fh = undef, $ref_array_interface_names = undef])>) back into a wireguard config.
 
 B<Parameters>
 
@@ -952,7 +958,7 @@ C<$ref_interface_config> Reference to hash containing B<one> interface config.
 =item *
 
 C<$wg_meta_prefix> Has to start with a '#' or ';' character and is optimally the
-same as in L</read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)>
+same as in L</read_wg_configs($ref_config_files, $wg_meta_prefix, $disabled_prefix [, $use_checksum = TRUE, $ext_fh = undef, $ref_array_interface_names = undef])>
 
 =item *
 

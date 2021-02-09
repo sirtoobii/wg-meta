@@ -1,3 +1,85 @@
+=pod
+
+=head1 NAME
+
+WGmeta::Wrapper::ConfigT - Class for interfacing the wireguard configuration supporting concurrent access
+
+=head1 DESCRIPTION
+
+Specialized child class of L<Wireguard::WGmeta::Wrapper::Config> which is capable of handling concurrent access.
+
+=head1 SYNOPSIS
+
+The interface is almost identical with the exception
+of L</commit([$is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_keys = undef])>
+
+ use Wireguard::WGmeta::Wrapper::ConfigT;
+ my $wg_metaT = Wireguard::WGmeta::Wrapper::ConfigT->new('<path to wireguard configuration>');
+
+=head1 CONCURRENCY
+
+To ensure that no inconsistent config files are generated, calls to a C<get_*()> may result in a reload from disk - namely
+when the config file on disk is newer than the current (parsed) one. So keep in mind to C<commit()> as soon as possible
+(this is obviously only true for environments where such situations are possible to occur)
+
+ # thread/process A
+ $wg_metaT->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'A');
+
+ # thread/process B
+ $wg_metaT->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'B');
+ $wg_metaT->commit(1);
+
+ # thread/process A (alias 'A' is overwritten by 'B')
+ wg_metaT->disable_by_alias('wg0', 'A'); # throws exception `invalid alias`!
+
+For more details about the reloading behaviour please refer to L</_may_reload_from_disk([$interface = undef])>.
+
+B<Commit behaviour>
+
+	FUNCTION commit($integrity_hashes)
+		FOR $interface IN $known_interfaces
+			lock_exclusive($interface)
+			UNLESS my_config_is_latest THEN
+				$on_disk <- read_from_disk($interface)
+			create_wg_config($interface, $on_disk,$integrity_hashes)
+
+	FUNCTION create_wg_config($interface, $on_disk, $integrity_hashes);
+		$may_conflicting <- search_for_common_data($interface, $on_disk)
+		FOR $section IN $may_conflicting
+			$sha_internal <- calculate_sha_from_internal()
+			$sha_disk <- calculate_sha_from_disk()
+			IF $sha_internal NE $sha_disk
+				IF $sha_disk EQ $integrity_hashes[$section]
+					take_from_internal()
+				ELSE
+					take_from_disk()
+			ELSE
+				take_from_disk()
+		write_non_conflicting()
+
+=head1 EXAMPLES
+
+ use Wireguard::WGmeta::Wrapper::ConfigT;
+ my $wg_metaT = Wireguard::WGmeta::Wrapper::ConfigT->new('<path to wireguard configuration>');
+
+ # thread A
+ $wg_metaT->set('wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'set_in_thread_A');
+ # Assumption: Our internal version is equal with the on-disk version at this point
+ my $integrity_hash = $wg_metaT->calculate_sha_from_internal();
+
+ # thread B
+ $wg_metaT->set('wg0', 'AN_OTHER_PUBLIC_KEY', 'name', 'set_in_thread_B');
+ $wg_metaT->commit(1); # works fine
+
+ # thread A
+ $wg_metaT->commit(1); # "Your changes for `WG_0_PEER_A_PUBLIC_KEY` were not applied"
+ $wg_metaT->commit(1, 0, {'WG_0_PEER_A_PUBLIC_KEY' => $integrity_hash}); # works fine -> non conflicting changes
+
+
+=head1 METHODS
+
+=cut
+
 package Wireguard::WGmeta::Wrapper::ConfigT;
 use strict;
 use warnings FATAL => 'all';
@@ -16,32 +98,57 @@ use constant FALSE => 0;
 use constant TRUE => 1;
 use constant INTEGRITY_HASH_SALT => 'wefnwioefh9032ur3';
 
+our $VERSION = "0.0.0"; # do not change manually, this variable is updated when calling make
 
+=head3 is_valid_interface($interface)
+
+L<Wireguard::WGmeta::Wrapper::Config/is_valid_interface($interface)>
+
+=cut
 sub is_valid_interface($self, $interface) {
     $self->_scan_for_new_interfaces();
     return $self->SUPER::is_valid_interface($interface);
 }
 
+=head3 is_valid_identifier($interface, $identifier)
+
+L<Wireguard::WGmeta::Wrapper::Config/is_valid_identifier($interface, $identifier)>
+
+=cut
 sub is_valid_identifier($self, $interface, $identifier) {
     $self->_may_reload_from_disk($interface);
     return $self->SUPER::is_valid_identifier($interface, $identifier);
 }
 
+=head3 translate_alias($interface, $alias)
+
+L<Wireguard::WGmeta::Wrapper::Config/translate_alias($interface, $alias)>
+
+=cut
 sub translate_alias($self, $interface, $alias) {
     $self->_may_reload_from_disk($interface);
     return $self->SUPER::translate_alias($interface, $alias);
 }
 
+=head3 try_translate_alias($interface, $may_alias)
+
+L<Wireguard::WGmeta::Wrapper::Config/try_translate_alias($interface, $may_alias)>
+
+=cut
 sub try_translate_alias($self, $interface, $may_alias) {
     $self->_may_reload_from_disk($interface);
     return $self->SUPER::try_translate_alias($interface, $may_alias);
 }
 
+=head3 get_interface_section($interface, $identifier)
+
+L<Wireguard::WGmeta::Wrapper::Config/get_interface_section($interface, $identifier)>
+
+=cut
 sub get_interface_section($self, $interface, $identifier) {
     $self->_may_reload_from_disk($interface);
     if (exists $self->{parsed_config}{$interface}{$identifier}) {
         my %r = %{$self->{parsed_config}{$interface}{$identifier}};
-        $r{integrity_hash} = calculate_sha1_from_section($self->{parsed_config}{$interface}{$identifier});
         return %r;
     }
     else {
@@ -49,17 +156,27 @@ sub get_interface_section($self, $interface, $identifier) {
     }
 }
 
+=head3 get_section_list($interface)
+
+L<Wireguard::WGmeta::Wrapper::Config/get_section_list($interface)>
+
+=cut
 sub get_section_list($self, $interface) {
     $self->_may_reload_from_disk($interface);
     return $self->SUPER::get_section_list($interface);
 }
 
+=head3 get_peer_count([$interface])
+
+L<Wireguard::WGmeta::Wrapper::Config/get_peer_count([$interface = undef])>
+
+=cut
 sub get_peer_count($self, $interface = undef) {
     $self->_may_reload_from_disk($interface);
     return $self->SUPER::get_peer_count($interface);
 }
 
-sub get_all_conf_files($wireguard_home) {
+sub _get_all_conf_files($wireguard_home) {
     my @config_files = read_dir($wireguard_home, qr/.*\.conf$/);
     if (@config_files == 0) {
         die "No matching interface configuration(s) in " . $wireguard_home;
@@ -68,23 +185,19 @@ sub get_all_conf_files($wireguard_home) {
     return \@config_files, $count;
 }
 
+=head3 get_interface_list()
+
+L<Wireguard::WGmeta::Wrapper::Config/get_interface_list()>
+
+=cut
 sub get_interface_list($self) {
     $self->_scan_for_new_interfaces();
     return sort keys %{$self->{parsed_config}};
 }
 
-=head3 commit([$is_hot_config = FALSE, $plain = FALSE])
+=head3 commit([$is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_keys = undef])
 
 Writes down the parsed config to the wireguard configuration folder.
-Does have an exclusive lock on the file while writing!
-
-B<Caveat> The is a very small chance for a race condition:
-
-    $self->_die_if_not_latest_data($interface);
-    ...
-    # an other instance starts writing somewhere between these lines
-    ...
-    write_file($file_name, $new_config); # ->BOOM!
 
 B<Parameters>
 
@@ -98,6 +211,17 @@ the suffix '_not_applied' is appended to the filename
 =item
 
 C<[$plain = FALSE])> If set to TRUE, no header is generated
+
+=item
+
+C<[$ref_hash_integrity_keys = undef])> Reference to a hash of integrity keys. Expected structure:
+
+    {
+        <identifier1> => 'integrity_hash_of_corresponding_section',
+        <identifier2> => 'integrity_hash_of_corresponding_section'
+    }
+
+For a more detailed explanation when this information is needed please refer to L</CONCURRENCY>.
 
 =back
 
@@ -120,8 +244,9 @@ sub commit($self, $is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_ke
             $file_name = $self->{parsed_config}{$interface_name}{config_path} . '_not_applied';
         }
         my $on_disk_config = undef;
-        my $fh;
 
+        # --- From here we lock the affected configuration file exclusively ----
+        my $fh;
         # check if interface exists - if not, we have a new interface
         if (-e $self->{parsed_config}{$interface_name}{config_path}) {
 
@@ -142,7 +267,8 @@ sub commit($self, $is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_ke
         }
         seek $fh, 0, 0;
         truncate $fh, 0;
-        my $new_config = $self->create_wg_configT(
+
+        my $new_config = $self->_create_wg_configT(
             $interface_name,
             $plain,
             $on_disk_config,
@@ -155,18 +281,10 @@ sub commit($self, $is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_ke
     }
 }
 
-sub _create_config($self, $interface, $plain = 0) {
-    $self->_may_reload_from_disk();
-    return $self->SUPER::_create_config($interface, $plain);
-}
-
-sub create_wg_configT($self, $interface, $plain = FALSE, $ref_on_disk_config = undef, $ref_hash_integrity_keys = undef) {
+sub _create_wg_configT($self, $interface, $plain = FALSE, $ref_on_disk_config = undef, $ref_hash_integrity_keys = undef) {
     my $new_config = "";
-    my $ref_current_internal_config = $self->{parsed_config}{$interface};
-    my $reference_config = $ref_current_internal_config;
-    if (defined $ref_on_disk_config) {
-        $reference_config = $ref_on_disk_config->{$interface};
-    }
+
+    # first, we look for sections which are common (disk and internal), then we search for exclusive ones
     my @may_conflict;
     my @exclusive_disk;
     my @exclusive_internal;
@@ -186,42 +304,44 @@ sub create_wg_configT($self, $interface, $plain = FALSE, $ref_on_disk_config = u
         }
     }
     else {
-        @may_conflict = @{$self->{parsed_config}{$interface}{section_order}};
+        # if no on-disk reference is provided all sections are considered as exclusive internal
+        @exclusive_internal = @{$self->{parsed_config}{$interface}{section_order}};
     }
 
     for my $identifier (@may_conflict) {
-        my $section_data = $ref_current_internal_config->{$identifier};
-        if (defined $ref_on_disk_config) {
-            my $on_disk_sha = calculate_sha1_from_section($ref_on_disk_config->{$interface}{$identifier});
-            my $internal_sha = calculate_sha1_from_section($ref_current_internal_config->{$identifier});
-            if ($on_disk_sha ne $internal_sha) {
-                # we may have a hash which allows us to modify
-                if (defined $ref_hash_integrity_keys && exists $ref_hash_integrity_keys->{$identifier}) {
-                    if ($on_disk_sha eq $ref_hash_integrity_keys->{$identifier}) {
-                        # take from internal
-                        $section_data = $ref_current_internal_config->{$identifier};
-                    }
-                    else {
-                        warn "your changes for `$identifier` were not applied";
-                        $section_data = $ref_on_disk_config->{$interface}{$identifier}
-                    }
-                }
-                else {
-                    # take from disk
+        my $section_data = $self->{parsed_config}{$interface}{$identifier};
+
+        # if the shas differ, the configuration on disk had been changed in the mean time
+        my $on_disk_sha = _calculate_sha1_from_section($ref_on_disk_config->{$interface}{$identifier});
+        my $internal_sha = _calculate_sha1_from_section($self->{parsed_config}{$interface}{$identifier});
+
+        # if the shas differ, it means that the we either have not the most recent data or the on-disk version has been changed in the meantime.
+        if ($on_disk_sha ne $internal_sha) {
+
+            # we may have a integrity hash from this section which allows us to modify
+            if (defined $ref_hash_integrity_keys && exists $ref_hash_integrity_keys->{$identifier}) {
+
+                # if the on-disk sha differs from our integrity hash, this section has been changed by an other process or user.
+                if ($on_disk_sha ne $ref_hash_integrity_keys->{$identifier}) {
+                    warn "your changes for `$identifier` were not applied";
                     $section_data = $ref_on_disk_config->{$interface}{$identifier}
                 }
             }
             else {
-                # take from disk
+                # take from disk (we have no integrity key for this section)
                 $section_data = $ref_on_disk_config->{$interface}{$identifier}
             }
+        }
+        else {
+            # take from disk
+            $section_data = $ref_on_disk_config->{$interface}{$identifier}
         }
         $new_config .= $self->_create_section($section_data);
 
     }
     # exclusive mode
-    $new_config .= join '', map{$self->_create_section($self->{parsed_config}{$interface}{$_});} @exclusive_internal;
-    $new_config .= join '', map{$self->_create_section($ref_on_disk_config->{$interface}{$_});} @exclusive_disk;
+    $new_config .= join '', map {$self->_create_section($self->{parsed_config}{$interface}{$_});} @exclusive_internal;
+    $new_config .= join '', map {$self->_create_section($ref_on_disk_config->{$interface}{$_});} @exclusive_disk;
     if ($plain == FALSE) {
         my $new_hash = compute_md5_checksum($new_config);
         my $config_header = "# This config is generated and maintained by wg-meta.\n"
@@ -296,7 +416,7 @@ actually a matching config file on disk and if yes, its loaded and parsed from d
 =back
 
 Remark: This method is not meant for public access, there is just this extensive documentation block since its behaviour
-is crucial to the function of this wrapper class.
+is crucial to the function of this class.
 
 B<Parameters>
 
@@ -355,7 +475,7 @@ sub _is_latest_data($self, $interface) {
 
 sub _scan_for_new_interfaces($self) {
     # check if theres maybe a new interface by comparing the file counts
-    my ($conf_files, $count) = get_all_conf_files($self->{wireguard_home});
+    my ($conf_files, $count) = _get_all_conf_files($self->{wireguard_home});
     if ($self->{n_conf_files} != $count) {
         for my $conf_path (@{$conf_files}) {
             # read interface name
@@ -373,14 +493,47 @@ sub _is_disabled($ref_parsed_config_section) {
     return FALSE;
 }
 
-sub calculate_sha1_from_section($ref_to_hash) {
-    my $s = 'wefwef';
+sub _calculate_sha1_from_section($ref_to_hash) {
     my %h = %{$ref_to_hash};
     return sha1_hex INTEGRITY_HASH_SALT . join '', map {$h{$_}} @{$ref_to_hash->{order}};
 }
 
+=head3 calculate_sha_from_internal($interface, $identifier)
+
+Calculates the sha1 from a section (already parsed).
+
+B<Caveat>
+
+It is possible that this method does not return the most recent, on-disk version of this section! It returns your current
+parsed state! This method does NOT trigger a C<_may_reload_from_disk()>!
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> A valid interface name
+
+=item
+
+C<$identifier> A valid identifier for this interface
+
+=back
+
+B<Returns>
+
+The sha1 (in HEX) the requested section
+
+=cut
 sub calculate_sha_from_internal($self, $interface, $identifier) {
-    return calculate_sha1_from_section($self->{parsed_config}{$interface}{$identifier});
+    if (exists $self->{parsed_config}{$interface} && exists $self->{parsed_config}{$interface}{$identifier}) {
+        return _calculate_sha1_from_section($self->{parsed_config}{$interface}{$identifier});
+    }
+    else {
+        die "Invalid interface `$interface` or section `$identifier`";
+    }
+
 }
 
 1;
