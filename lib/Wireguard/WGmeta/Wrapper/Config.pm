@@ -57,8 +57,6 @@ use Wireguard::WGmeta::ValidAttributes;
 use Wireguard::WGmeta::Utils;
 use Digest::MD5 qw(md5);
 use List::Util qw(sum);
-use Time::HiRes qw(stat);
-use Fcntl qw(O_CREAT O_EXCL O_RDWR O_WRONLY);
 
 use base 'Exporter';
 our @EXPORT = qw(read_wg_configs create_wg_config);
@@ -67,9 +65,6 @@ our $VERSION = "0.0.0"; # do not change manually, this variable is updated when 
 
 use constant FALSE => 0;
 use constant TRUE => 1;
-use constant LOCK_SH => 1;
-use constant LOCK_EX => 2;
-use constant LOCK_UN => 8;
 
 # constants for states of the config parser
 use constant IS_EMPTY => -1;
@@ -165,7 +160,7 @@ is expected: C<forward_fun($interface, $identifier, $attribute, $value)>
 
 B<Raises>
 
-Exception if either the interface or identifier is invalid or B<the config file on disk is newer than this parsed config!>
+Exception if either the interface or identifier is invalid.
 
 B<Returns>
 
@@ -1082,7 +1077,7 @@ sub _is_disabled($ref_parsed_config_section) {
 
 =head3 get_interface_list()
 
-Return a list of all interfaces. This is also the place where new interfaces are detected.
+Return a list of all interfaces.
 
 B<Returns>
 
@@ -1200,9 +1195,9 @@ None
 
 =cut
 sub add_interface($self, $interface_name, $ip_address, $listen_port, $private_key) {
-    # if ($self->is_valid_interface($interface_name)) {
-    #     die "Interface `$interface_name` already exists";
-    # }
+    if ($self->is_valid_interface($interface_name)) {
+        die "Interface `$interface_name` already exists";
+    }
     my %interface = (
         'Address'    => $ip_address,
         'ListenPort' => $listen_port,
