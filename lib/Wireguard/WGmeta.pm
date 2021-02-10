@@ -26,7 +26,7 @@ C<wgXX.conf> file (Metadata is prefixed with C<#+>):
 
 =head1 AUTHORS
 
-Since theres a lot of spam flooding my mailbox, I have a quite strict spam filtering in place. If you want to make sure
+Since there is a lot of spam flooding my mailbox, I had to put spam filtering in place. If you want to make sure
 that your email gets delivered into my mailbox, include C<#im_not_a_bot#> in the B<subject!>
 
 S<Tobias Bossert E<lt>tobib at cpan.orgE<gt>>
