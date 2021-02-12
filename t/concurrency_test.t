@@ -6,7 +6,7 @@ use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../thirdparty/lib/perl5";
 use experimental 'signatures';
 use Test::More;
-use Time::HiRes qw (usleep);
+use Time::HiRes qw(usleep);
 
 use Wireguard::WGmeta::Wrapper::ConfigT;
 use Wireguard::WGmeta::Utils;
@@ -73,9 +73,13 @@ if (defined $THREADS_PRESENT) {
     sub run_in_thread_2 {
         lock $sync;
         my $wg_meta_t = Wireguard::WGmeta::Wrapper::ConfigT->new(TEST_DIR);
+        my %integrity_hashes;
         thread_tester('modify peer merge', '2', (sub() {
+            %integrity_hashes = (
+                'PUBLIC_KEY_PEER_OUTSIDE_THREAD' => $wg_meta_t->calculate_sha_from_internal('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD')
+            );
             $wg_meta_t->set('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD', 'name', 'Name_set_in_thread_2');
-            $wg_meta_t->commit(1);
+            $wg_meta_t->commit(1, 0, \%integrity_hashes);
         }));
         cond_signal $sync;
     }
@@ -127,7 +131,7 @@ AllowedIPs = 10.0.3.56/32
 
 
     sub run_in_thread_3 {
-        local $SIG{__WARN__} = sub {
+        local $SIG{__DIE__} = sub {
             $test_result = 1;
         };
         lock $sync;
@@ -141,16 +145,22 @@ AllowedIPs = 10.0.3.56/32
         }));
         cond_wait $sync;
         thread_tester('merge conflict commit', '3', (sub() {
-            $wg_meta_t->commit(1, 0, \%integrity_hashes);
+            eval {
+                $wg_meta_t->commit(1, 0, \%integrity_hashes);
+            };
         }));
 
     }
     sub run_in_thread_4 {
         lock $sync;
         my $wg_meta_t = Wireguard::WGmeta::Wrapper::ConfigT->new(TEST_DIR);
+        my %integrity_hashes;
         thread_tester('merge conflict commit other', '4', (sub() {
+            %integrity_hashes = (
+                'PUBLIC_KEY_PEER_OUTSIDE_THREAD' => $wg_meta_t->calculate_sha_from_internal('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD')
+            );
             $wg_meta_t->set('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD', 'name', 'Name_set_in_thread_4');
-            $wg_meta_t->commit(1);
+            $wg_meta_t->commit(1, 0, \%integrity_hashes);
         }));
         cond_signal $sync;
     }
@@ -324,13 +334,13 @@ AllowedIPs = 10.0.5.56/32
         }));
         cond_signal $sync;
         cond_wait $sync;
-        thread_tester('get interface list 2', '10', (sub()  {
+        thread_tester('get interface list 2', '10', (sub() {
             my @actual = $wg_meta_t->get_interface_list();
             $ping_pong_result &= eq_array(\@actual, [ "mini_wg0", "mini_wg1", "thread_iface1", "thread_iface2" ]);
         }));
         cond_signal $sync;
         cond_wait $sync;
-        thread_tester('get section list', '10', (sub()  {
+        thread_tester('get section list', '10', (sub() {
             my @actual = $wg_meta_t->get_section_list('thread_iface2');
             $ping_pong_result &= eq_array \@actual, [ 'thread_iface2', 'PEER_IFACE2_PUB_KEY' ];
             $ping_pong_result &= $wg_meta_t->try_translate_alias('thread_iface2', 'alias_thread_iface2') eq 'PEER_IFACE2_PUB_KEY';

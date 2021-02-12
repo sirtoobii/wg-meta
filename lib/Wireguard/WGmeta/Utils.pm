@@ -49,7 +49,7 @@ sub read_dir($path, $pattern) {
 =head3 read_file($path [, $path_is_fh = undef])
 
 Reads a file given by a C<$path> into a string. Applies a shared lock on the file while reading. C<$path> can also
-reference an open filehandle for external control over locks. If this is the case, set C<$path_is_fh> to True.
+reference an open filehandle for external control over locks and cursor. If this is the case, set C<$path_is_fh> to True.
 
 B<Parameters>
 
@@ -61,13 +61,13 @@ C<$path> Path to file
 
 =item
 
-C<[$path_is_fh = undef]>> Set to True if C<$path> is an open filehandle
+C[$path_is_fh = undef]> Set to True if C<$path> is an open filehandle (at least for reading).
 
 =back
 
 B<Raises>
 
-Exception if the file is somehow inaccessible.
+Exception if the file is somehow inaccessible or it was unable to acquire the lock
 
 B<Returns>
 
@@ -95,7 +95,7 @@ sub read_file($path, $path_is_fh = undef) {
 =head3 write_file($path, $content [, $path_is_fh = undef])
 
 Writes C<$content> to C<$file> while having an exclusive lock. C<$path> can also
-reference an open filehandle for external control over locks. If this is the case, set C<$path_is_fh> to True.
+reference an open filehandle for external control over locks and cursor. If this is the case, set C<$path_is_fh> to True.
 
 B<Parameters>
 
@@ -111,9 +111,13 @@ C<$content> File content
 
 =item
 
-C<[$path_is_fh = undef]> Set to True if C<$path> is an open filehandle
+C<[$path_is_fh = undef]> Set to True if C<$path> is an open filehandle (write!)
 
 =back
+
+B<Raises>
+
+Exception if the file is somehow inaccessible or it was unable to acquire the lock
 
 B<Returns>
 

@@ -83,7 +83,7 @@ sub new($class, $wg_show_dump) {
 =head3 wg_show_dump_parser($input)
 
 Parser for the output of C<wg show dump>. Aims to create a compatible with:
-L<Wireguard::WGmeta::Wrapper::Config/read_wg_configs($ref_config_files, $wg_meta_prefix, $disabled_prefix [, $use_checksum = TRUE, $ext_fh = undef, $ref_array_interface_names = undef])>:
+L<Wireguard::WGmeta::Wrapper::Config/parse_wg_config($config_file_content, $interface_name, $wg_meta_prefix, $disabled_prefix [, $use_checksum])>:
 
     {
         'interface_name' => {
