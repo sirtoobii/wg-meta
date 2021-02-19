@@ -179,7 +179,7 @@ sub generate_ip_list($network_id, $subnet_size) {
 
     while ($start_decimal <= $end_decimal) {
         my @bytes = unpack 'CCCC', pack 'N', $start_decimal;
-        my $ipv4 = (join '.', @bytes) . '/32';
+        my $ipv4 = (join '.', @bytes);
         $ip_list{$ipv4} = undef;
         $start_decimal++;
     }

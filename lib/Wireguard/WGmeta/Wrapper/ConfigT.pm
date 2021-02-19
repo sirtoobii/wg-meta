@@ -181,6 +181,16 @@ sub get_peer_count($self, $interface = undef) {
     return $self->SUPER::get_peer_count($interface);
 }
 
+=head3 get_peer_count([$interface])
+
+L<Wireguard::WGmeta::Wrapper::Config/get_interface_fqdn($interface)>
+
+=cut
+sub get_interface_fqdn($self, $interface) {
+    $self->_may_reload_from_disk($interface);
+    return $self->SUPER::get_interface_fqdn($interface);
+}
+
 sub _get_all_conf_files($wireguard_home) {
     my @config_files = read_dir($wireguard_home, qr/.*\.conf$/);
     if (@config_files == 0) {

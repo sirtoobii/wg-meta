@@ -103,6 +103,10 @@ use constant WG_META_DEFAULT => {
     'disabled'    => {
         'in_config_name' => 'Disabled',
         'validator'      => \&accept_any
+    },
+    'fqdn'    => {
+        'in_config_name' => 'FQDN',
+        'validator'      => \&accept_any
     }
 };
 

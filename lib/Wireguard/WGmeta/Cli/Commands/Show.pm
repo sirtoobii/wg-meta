@@ -100,6 +100,7 @@ sub _run_command($self) {
         # Print Interface state
         print BOLD . "  State: " . RESET . (($wg_show->iface_exists($iface)) ? GREEN . "UP" : RED . "DOWN") . RESET . "\n";
         print BOLD . "  ListenPort: " . RESET . $interface{'listen-port'} . "\n";
+        print BOLD . "  FQDN: " . RESET . $wg_meta->get_interface_fqdn($iface) . "\n";
         # try to derive iface public key from privatekey
         my $iface_pubkey = do {
             local $@;
@@ -158,7 +159,7 @@ sub _print_section($self, $ref_config_section, $ref_show_section) {
                 my $cleaned_attr = $ref_show_section->{$attr_copy};
 
                 # check if a converter function is defined
-                if (exists $self->{attr_converters}{$attr_copy}){
+                if (exists $self->{attr_converters}{$attr_copy}) {
                     $cleaned_attr = $self->{attr_converters}{$attr_copy}($cleaned_attr);
                 }
                 if ($ref_show_section->{$attr_copy} ne '(none)') {

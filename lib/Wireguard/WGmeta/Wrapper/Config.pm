@@ -1115,6 +1115,34 @@ sub get_section_list($self, $interface) {
     }
 }
 
+=head3 get_interface_fqdn($interface)
+
+Returns the FQDN for an interface (if available)
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$interface> A valid interface name
+
+=back
+
+B<Returns>
+
+Value of C<fqdn> attribute or empty string if unavailable.
+
+=cut
+sub get_interface_fqdn($self, $interface) {
+    if ($self->is_valid_interface($interface) && exists $self->{parsed_config}{$interface}{fqdn}) {
+        return $self->{parsed_config}{$interface}{fqdn};
+    }
+    else {
+        return '';
+    }
+}
+
 sub get_wg_meta_prefix($self) {
     return $self->{wg_meta_prefix};
 }
@@ -1427,7 +1455,7 @@ sub _set_changed($self, $interface) {
     $self->{parsed_config}{$interface}{has_changed} = 1;
 }
 
-sub _reset_changed($self, $interface){
+sub _reset_changed($self, $interface) {
     delete $self->{parsed_config}{$interface}{has_changed} if (exists $self->{parsed_config}{$interface}{has_changed});
 }
 
