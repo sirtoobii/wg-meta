@@ -93,3 +93,5 @@ AllowedIPs = 0.0.0.0/0
 Endpoint = wg.example.com
 ```
 
+Development of this project is sponsored by [OETIKER+PARTNER AG](https://oetiker.ch)
+

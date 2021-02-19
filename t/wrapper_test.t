@@ -12,8 +12,8 @@ use Wireguard::WGmeta::Utils;
 
 use constant TEST_DIR => $FindBin::Bin . '/test_data/';
 
-my $initial_wg0 = read_file(TEST_DIR.'mini_wg0.conf');
-my $initial_wg1 = read_file(TEST_DIR.'mini_wg1.conf');
+my $initial_wg0 = read_file(TEST_DIR . 'mini_wg0.conf');
+my $initial_wg1 = read_file(TEST_DIR . 'mini_wg1.conf');
 
 my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR);
 
@@ -74,7 +74,6 @@ $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1');
 # wg-meta update alias by alias
 $wg_meta->set_by_alias('mini_wg0', 'alias1', 'alias', 'alias2');
 
-
 my $actual = $wg_meta->_create_config('mini_wg0', 1);
 ok $actual eq $expected, 'set valid attrs';
 
@@ -119,14 +118,17 @@ ok $actual eq $expected, 'removed peer, content';
 ok $wg_meta->get_peer_count('mini_wg1') == 1, 'peer count after removal [wg1]';
 
 # test if the alias got removed too
-does_throw('access deleted alias', (sub(@args){$wg_meta->translate_alias(@args)}), ('mini_wg1', 'Alias1'));
+does_throw('access deleted alias', (sub(@args) {$wg_meta->translate_alias(@args)}), ('mini_wg1', 'Alias1'));
+
+
+# try to an alias which is already present
+does_throw('alias already known', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1', 1));
 
 # remove interface (and keep file)
-$wg_meta->remove_interface('mini_wg1', 1);
+$wg_meta->remove_interface('mini_wg1');
 @output = $wg_meta->get_interface_list();
 my @expected = ('mini_wg0');
 ok eq_array(\@output, \@expected), 'remove interface';
-ok -e TEST_DIR.'mini_wg1.conf', 'interface file is still there';
 
 # forwarder test
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 12345, 0, \&_forward);
@@ -146,10 +148,7 @@ does_throw('non peer attribute on peer', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_
 # try to set a non interface attribute on a interface
 does_throw('non interface attribute on interface', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'allowed-ips', '10.0.0.0/32', 1));
 
-# try to an alias which is already present
-does_throw('alias already known', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1', 1));
-
-# # data validation errors (uncomment if we eventually implement attribute value validation...)
+# data validation errors (uncomment if we eventually implement attribute value validation...)
 does_throw('listen-port nan', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'listen-port', 'not_a_number', 1));
 # does_throw('private-key too short', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'private-key', 'key_to_short', 1));
 # does_throw('private-key invalid chars', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'private-key', 'key invalid chars', 1));
@@ -160,22 +159,16 @@ does_throw('listen-port nan', \&set_wrapper, ('mini_wg0', 'mini_wg0', 'listen-po
 $wg_meta->remove_interface('mini_wg0');
 @output = $wg_meta->get_interface_list();
 @expected = ();
-ok eq_array(\@output, \@expected), 'removed all interfaces [wg0';
+ok eq_array(\@output, \@expected), 'removed all interfaces [wg0]';
 
-ok ((not -e TEST_DIR . 'mini_wg0.conf'), 'interface file removed');
+ok((not -e TEST_DIR . 'mini_wg0.conf'), 'interface file removed');
 
 done_testing();
 
 # write back initial configs
-open my $fh1, '>', TEST_DIR.'mini_wg1.conf' or die;
-open my $fh2, '>', TEST_DIR.'mini_wg0.conf' or die;
-# write down to file
-print $fh1 $initial_wg1;
-close $fh1;
-# write down to file
-print $fh2 $initial_wg0;
-close $fh2;
-
+my ($filename_1, $filename_2) = (TEST_DIR . 'mini_wg1.conf', TEST_DIR . 'mini_wg0.conf');
+write_file($filename_1, $initial_wg1);
+write_file($filename_2, $initial_wg0);
 
 # helper methods
 sub set_wrapper(@args) {

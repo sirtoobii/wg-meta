@@ -83,7 +83,7 @@ sub new($class, $wg_show_dump) {
 =head3 wg_show_dump_parser($input)
 
 Parser for the output of C<wg show dump>. Aims to create a compatible with:
-L<Wireguard::WGmeta::Wrapper::Config/read_wg_configs($wireguard_home, $wg_meta_prefix, $disabled_prefix)>:
+L<Wireguard::WGmeta::Wrapper::Config/parse_wg_config($config_file_content, $interface_name, $wg_meta_prefix, $disabled_prefix [, $use_checksum])>:
 
     {
         'interface_name' => {
@@ -127,7 +127,6 @@ sub wg_show_dump_parser($input) {
     my $interface = '';
     my $parsed_show = {};
 
-    # ToDo: Make use of WGmeta::ValidAttributes
     my @keys_interface = qw(interface private-key public-key listen-port fwmark);
     my @keys_peer = qw(interface public-key preshared-key endpoint allowed-ips latest-handshake transfer-rx transfer-tx persistent-keepalive);
     for my $line (split /\n/, $input) {
