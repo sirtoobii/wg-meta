@@ -5,7 +5,7 @@ use experimental 'signatures';
 use Time::HiRes qw(stat);
 use Digest::MD5 qw(md5);
 use base 'Exporter';
-our @EXPORT = qw(read_dir read_file write_file generate_ip_list get_mtime compute_md5_checksum);
+our @EXPORT = qw(read_dir read_file write_file generate_ipv4_list get_mtime compute_md5_checksum);
 
 use constant LOCK_SH => 1;
 use constant LOCK_EX => 2;
@@ -168,7 +168,7 @@ sub compute_md5_checksum($input) {
     return unpack 'L', $str; # Convert to 4-byte integer
 }
 
-sub generate_ip_list($network_id, $subnet_size) {
+sub generate_ipv4_list($network_id, $subnet_size) {
     # thanks to https://www.perl.com/article/creating-ip-address-tools-from-scratch/
 
     my %ip_list;
@@ -177,13 +177,29 @@ sub generate_ip_list($network_id, $subnet_size) {
     my $bits_remaining = 32 - $subnet_size;
     my $end_decimal = $start_decimal + 2 ** $bits_remaining - 1;
 
+    # exclude network_id & broadcast address
+    if ($subnet_size < 31) {
+        $start_decimal += 1;
+        $end_decimal -= 1;
+    }
     while ($start_decimal <= $end_decimal) {
         my @bytes = unpack 'CCCC', pack 'N', $start_decimal;
         my $ipv4 = (join '.', @bytes);
-        $ip_list{$ipv4} = undef;
+        $ip_list{$ipv4} = 1;
         $start_decimal++;
     }
     return \%ip_list;
+}
+
+sub extract_ipv4($ip_string) {
+    my @ips = split /\,/, $ip_string;
+    chomp(@ips);
+    my @result;
+    for my $possible_ip (@ips) {
+        my @a = $possible_ip =~ /(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})/g;
+        push @result, [ $a[0], $a[1] ] if @a;
+    }
+    return \@result;
 }
 
 1;
