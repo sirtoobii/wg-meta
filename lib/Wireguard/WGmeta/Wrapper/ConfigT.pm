@@ -80,6 +80,17 @@ B<Commit behaviour>
  $wg_metaT->commit(1); # "Your changes for `WG_0_PEER_A_PUBLIC_KEY` were not applied"
  $wg_metaT->commit(1, 0, {'WG_0_PEER_A_PUBLIC_KEY' => $integrity_hash}); # works fine -> non conflicting changes
 
+ # Reload callbacks
+ sub my_reload_callback($interface, $ref_list_args){
+    my @args = @{$ref_list_args};
+    print "$interface, reloaded and $args[0]!";
+ }
+
+ # register our callback handler
+ $wg_metaT->register_on_reload_listener(\&my_reload_callback, 'handler_id', [ 'hello from listener' ]);
+
+ # Everytime an interface is reloaded, our handler is called until we uninstall our handler
+ $wg_metaT->remove_on_reload_listener('handler_id');
 
 =head1 METHODS
 

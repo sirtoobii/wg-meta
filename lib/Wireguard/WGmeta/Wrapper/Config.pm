@@ -119,6 +119,7 @@ sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefi
         'wg_meta_disabled_prefix'  => $wg_meta_disabled_prefix,
         'n_conf_files'             => $count,
         'parsed_config'            => $parsed_config,
+        'reload_listeners'         => {},
         'wg_meta_attrs'            => Wireguard::WGmeta::ValidAttributes::WG_META_DEFAULT,
         'wg_meta_additional_attrs' => Wireguard::WGmeta::ValidAttributes::WG_META_ADDITIONAL,
         'wg_orig_interface_attrs'  => Wireguard::WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
@@ -549,6 +550,7 @@ Parses the contents of C<$config_file_content> and returns a hash with the follo
             'checksum'      => <calculated_checksum_of_this_interface_config>,
             'n_peers'       => <number_of_peers_for_this_interface>,
             'interface_name' => <interface_name>,
+            'peer_ip_list'  => <list_of_all_allowed_ips_values>,
             'a_identifier'    => {
                 'type'  => <'Interface' or 'Peer'>,
                 'order' => <list_of_attributes_in_their_original_order>,
@@ -1415,6 +1417,7 @@ sub reload_from_disk($self, $interface, $new = FALSE) {
         $self->{parsed_config}{$interface} = parse_wg_config($contents, $interface, $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix}, FALSE);
         $self->{parsed_config}{$interface}{config_path} = $config_path;
         $self->{parsed_config}{$interface}{mtime} = get_mtime($config_path);
+        $self->_call_reload_listeners($interface);
     }
     else {
         $config_path = $self->{wireguard_home} . $interface . '.conf';
@@ -1425,6 +1428,7 @@ sub reload_from_disk($self, $interface, $new = FALSE) {
             $self->{parsed_config}{$interface} = $maybe_new_config;
             $self->{parsed_config}{$interface}{config_path} = $config_path;
             $self->{parsed_config}{$interface}{mtime} = get_mtime($config_path);
+            $self->_call_reload_listeners($interface);
         }
     }
 
@@ -1458,5 +1462,92 @@ sub _set_changed($self, $interface) {
 sub _reset_changed($self, $interface) {
     delete $self->{parsed_config}{$interface}{has_changed} if (exists $self->{parsed_config}{$interface}{has_changed});
 }
+
+=head3 register_on_reload_listener($ref_handler, $handler_id [, $ref_listener_args = []])
+
+Register your callback handlers for the C<reload_from_disk()> event here. Your handler is called
+B<after> the reload happened, is blocking and exceptions are caught in an C<eval{};> environment.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$ref_handler> Reference to a handler function. The followin signature is expected:
+
+    sub my_handler_function($interface, $ref_list_args){
+        ...
+    }
+
+=item
+
+C<$handler_id> An identifier for you handler function. Must be unique!
+
+=item
+
+C<[$ref_listener_args = []]> A reference to an argument list for your handler function
+
+=back
+
+B<Returns>
+
+None, exception if C<$handler_id> is already present.
+
+=cut
+sub register_on_reload_listener($self, $ref_handler, $handler_id, $ref_listener_args = []) {
+    unless ($self->{reload_listeners}{$handler_id}) {
+        my $listener_data = {
+            'handler' => $ref_handler,
+            'args'    => $ref_listener_args
+        };
+        $self->{reload_listeners}{$handler_id} = $listener_data;
+    }
+    else {
+        die "Handler id $handler_id already present";
+    }
+
+}
+
+=head3 remove_on_reload_listener($handler_id)
+
+Removes a reload callback handler by it's C<$handler_id>.
+
+B<Parameters>
+
+=over 1
+
+=item
+
+C<$handler_id> A valid handler id
+
+=back
+
+B<Returns>
+
+1 on success, undef on failure.
+
+=cut
+sub remove_on_reload_listener($self, $handler_id) {
+    if (exists $self->{reload_listeners}{$handler_id}) {
+        delete $self->{reload_listeners}{$handler_id};
+        return 1;
+    }
+    else {
+        return undef;
+    }
+}
+
+sub _call_reload_listeners($self, $interface) {
+    for my $listener_id (keys %{$self->{reload_listeners}}) {
+        eval {
+            &{$self->{reload_listeners}{$listener_id}{handler}}($interface, $self->{reload_listeners}{$listener_id}{args});
+        };
+        if ($@) {
+            warn "Call to reload_listener $listener_id failed: $@";
+        }
+    }
+}
+
 
 1;

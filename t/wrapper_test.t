@@ -136,6 +136,19 @@ sub _forward($interface, $identifier, $attribute, $value) {
     ok $interface eq 'mini_wg0' && $identifier eq 'WG_0_PEER_A_PUBLIC_KEY' && $attribute eq 'listen-port' && $value == 12345, 'set forward_fun';
 }
 
+# reload listener test
+my $listener_result = 0;
+sub _my_reload_listener($interface, $ref_args) {
+    my @args = @{$ref_args};
+    $listener_result = 1 if "$interface,$args[0]" eq "mini_wg0,hello from listener";
+}
+
+
+$wg_meta->register_on_reload_listener(\&_my_reload_listener, 'bla', [ 'hello from listener' ]);
+$wg_meta->reload_from_disk('mini_wg0');
+
+ok $listener_result, 'Reload listener';
+
 # no forwarder test
 does_throw('no-meta w/o forwarder', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'listen-port', 12345, 0));
 
