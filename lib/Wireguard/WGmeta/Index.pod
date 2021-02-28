@@ -102,10 +102,6 @@ L<Wireguard::WGmeta::Cli::Router> - Entry point for the CLI
 
 L<Wireguard::WGmeta::ValidAttributes> - Configurations for all supported attributes.
 
-=item *
-
-L<Wireguard::WGmeta::IPmanager> - Class for managing IPv4 address ranges
-
 =back
 
 =cut

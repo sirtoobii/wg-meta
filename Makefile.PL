@@ -41,7 +41,8 @@ sub MY::postamble {
     my $self = shift;
     return <<"EOF";
 
-bin/wg-meta lib/Wireguard/WGmeta/Wrapper/Config.pm lib/Wireguard/WGmeta/Wrapper/Show.pm lib/Wireguard/WGmeta.pm lib/Wireguard/WGmeta/Wrapper/ConfigT.pm: VERSION
+VERSION_FILES := \$(shell grep -Rl 'our \$\$VERSION = ' .)
+\$(VERSION_FILES): VERSION
 	\$(PERL) -i -p -e 's/\$VERSION\\s*=\\s*"[\\d|\.]*[A-z]*"/\$VERSION = "\$(VERSION)"/;' \$\@
 
 # # Unfortunately, this is (gnu-)make specific...

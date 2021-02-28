@@ -100,6 +100,7 @@ sub _run_command($self) {
         # Print Interface state
         print BOLD . "  State: " . RESET . (($wg_show->iface_exists($iface)) ? GREEN . "UP" : RED . "DOWN") . RESET . "\n";
         print BOLD . "  ListenPort: " . RESET . $interface{'listen-port'} . "\n";
+        #print BOLD . "  Address: " . RESET . $interface{'address'} . "\n";
         print BOLD . "  FQDN: " . RESET . $wg_meta->get_interface_fqdn($iface) . "\n";
         # try to derive iface public key from privatekey
         my $iface_pubkey = do {
