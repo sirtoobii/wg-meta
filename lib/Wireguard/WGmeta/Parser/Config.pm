@@ -8,7 +8,7 @@ WGmeta::Parser::Config - Parser for wireguard configuration files.
 
  use Wireguard::WGmeta::Parser::Config;
 
- my $content = read_file('<path_to_wireguard_conf_file');
+ my $content = `cat '<path_to_wireguard_conf_file')`;
  my $hash_parsed_configs = parse_wg_config($content, '<interface_name>', '#+', '#-');
 
  # and similarly to transform the parsed config into a wireguard compatible format again
