@@ -1,3 +1,6 @@
+0.2.1 2021-02-28 Tobias Bossert (tobib at cpan.org)
+- fix: Concurrency-test threads detection
+
 0.2.0 2021-02-28 Tobias Bossert (tobib at cpan.org)
 - added: reload callbacks
 - added: fqdn attr

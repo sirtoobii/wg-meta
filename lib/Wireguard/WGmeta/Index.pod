@@ -108,7 +108,10 @@ L<Wireguard::WGmeta::ValidAttributes> - Configurations for all supported attribu
 
 =head1 AUTHORS
 
-S<Tobias Bossert E<lt>tobib at cpan.orgE<gt>>
+Since there is a lot of spam flooding my mailbox, I had to put spam filtering in place. If you want to make sure
+that your email gets delivered into my mailbox, include C<#im_not_a_bot#> in the B<subject!>
+
+S<Tobias Bossert E<lt>tobib at cpan dot orgE<gt>>
 
 =head1 THANKS TO
 

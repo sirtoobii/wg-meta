@@ -16,8 +16,10 @@ use constant TEST_DIR => $FindBin::Bin . '/test_data/';
 my $THREADS_PRESENT;
 BEGIN {
     eval {
-        use threads;
-        use threads::shared;
+        require threads;
+        threads->import();
+        require threads::shared;
+        threads::shared->import();
         $THREADS_PRESENT = 1;
     };
 }

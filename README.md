@@ -1,3 +1,5 @@
+![](https://img.shields.io/cpan/v/Wireguard-WGmeta)
+
 # wg-meta
 
 An approach to add metadata to the main wireguard config, written in Perl.
@@ -15,7 +17,7 @@ An approach to add metadata to the main wireguard config, written in Perl.
 
 ## Installation
 
-![https://metacpan.org/release/Wireguard-WGmeta](https://img.shields.io/cpan/v/Wireguard-WGmeta)
+Probably the easiest way is through cpan: [https://metacpan.org/release/Wireguard-WGmeta](https://metacpan.org/release/Wireguard-WGmeta)
 
 ### Build from source
 
