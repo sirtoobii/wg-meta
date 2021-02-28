@@ -10,9 +10,12 @@ An approach to add metadata to the main wireguard config, written in Perl.
 - Modular structure: The whole parser is independent of the CLI module - and can be used as a standalone library.
 - The config parser/writer and as well as the `wg show dump` parser are independent too. For more info, please refer to
   their respective POD.
+- Concurrent Access support is built-in.
 - No external dependencies, runs on plain Perl (>=v5.22)!
 
 ## Installation
+
+![](https://img.shields.io/cpan/v/Wireguard-WGmeta)
 
 ### Build from source
 
@@ -92,4 +95,6 @@ PublicKey = +qz742hzxD3E5z5QF7VOvleVS1onavQpXBK3NdTh40g=
 AllowedIPs = 0.0.0.0/0
 Endpoint = wg.example.com
 ```
+
+Development of this project is sponsored by [OETIKER+PARTNER AG](https://oetiker.ch)
 
