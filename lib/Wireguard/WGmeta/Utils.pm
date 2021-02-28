@@ -5,7 +5,7 @@ use experimental 'signatures';
 use Time::HiRes qw(stat);
 use Digest::MD5 qw(md5);
 use base 'Exporter';
-our @EXPORT = qw(read_dir read_file write_file generate_ipv4_list get_mtime compute_md5_checksum);
+our @EXPORT = qw(read_dir read_file write_file get_mtime compute_md5_checksum split_and_trim);
 
 use constant LOCK_SH => 1;
 use constant LOCK_EX => 2;
@@ -168,38 +168,33 @@ sub compute_md5_checksum($input) {
     return unpack 'L', $str; # Convert to 4-byte integer
 }
 
-sub generate_ipv4_list($network_id, $subnet_size) {
-    # thanks to https://www.perl.com/article/creating-ip-address-tools-from-scratch/
+=head3 split_and_trim($line, $separator)
 
-    my %ip_list;
-    my @bytes = split /\./, $network_id;
-    my $start_decimal = $bytes[0] * 2 ** 24 + $bytes[1] * 2 ** 16 + $bytes[2] * 2 ** 8 + $bytes[3];
-    my $bits_remaining = 32 - $subnet_size;
-    my $end_decimal = $start_decimal + 2 ** $bits_remaining - 1;
+Utility method to split and trim a string separated by C<$separator>.
 
-    # exclude network_id & broadcast address
-    if ($subnet_size < 31) {
-        $start_decimal += 1;
-        $end_decimal -= 1;
-    }
-    while ($start_decimal <= $end_decimal) {
-        my @bytes = unpack 'CCCC', pack 'N', $start_decimal;
-        my $ipv4 = (join '.', @bytes);
-        $ip_list{$ipv4} = 1;
-        $start_decimal++;
-    }
-    return \%ip_list;
+B<Parameters>
+
+=over 1
+
+=item *
+
+C<$line> Input string (e.g 'This = That   ')
+
+=item *
+
+C<$separator> String separator (e.v '=')
+
+=back
+
+B<Returns>
+
+Two strings. With example values given in the parameters this would be 'This' and 'That'.
+
+=cut
+sub split_and_trim($line, $separator) {
+    return map {s/^\s+|\s+$//g;
+        $_} split $separator, $line, 2;
 }
 
-sub extract_ipv4($ip_string) {
-    my @ips = split /\,/, $ip_string;
-    chomp(@ips);
-    my @result;
-    for my $possible_ip (@ips) {
-        my @a = $possible_ip =~ /(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})/g;
-        push @result, [ $a[0], $a[1] ] if @a;
-    }
-    return \@result;
-}
 
 1;

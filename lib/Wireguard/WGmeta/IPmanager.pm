@@ -1,3 +1,32 @@
+=pod
+
+=head1 NAME
+
+WGmeta::IPmanager - Class for managing IPv4 address ranges
+
+=head1 SYNOPSIS
+
+    use Wireguard::WGmeta::IPmanager;
+    my $ranges = {
+        #IPv6 entries are ignored
+        'target_1' => extract_ipv4('10.0.0.2/24,fdc9:281f:04d7:9ee9::2/64,80.0.0.2/24'),
+        'target_2' => extract_ipv4('192.168.0.1/28,fdc9:281f:04d7:9ee9::2/64,90.0.0.2/32')
+    };
+
+    my $ip = Wireguard::WGmeta::IPmanager->new();
+    $ip->ipv4_build_database($ranges);
+    $ip->ipv4_acquire('90.0.0.2', 'target_2');
+
+    $ip->ipv4_suggest('target_2', 2);
+
+=head1 DESCRIPTION
+
+Simple IPv4-ranges manager with abilities to acquire and release addresses.
+
+=head1 METHODS
+
+=cut
+
 package Wireguard::WGmeta::IPmanager;
 use strict;
 use warnings FATAL => 'all';

@@ -105,6 +105,7 @@ use File::Basename;
 use experimental 'signatures';
 
 use Wireguard::WGmeta::Wrapper::Config;
+use Wireguard::WGmeta::Parser::Config;
 use Wireguard::WGmeta::ValidAttributes;
 use Wireguard::WGmeta::Utils;
 
