@@ -561,6 +561,8 @@ sub commit($self, $is_hot_config = FALSE, $plain = FALSE) {
             print $fh $new_config;
             $self->_reset_changed($interface);
             close $fh;
+            # Notify listeners about a file change
+            $self->_call_reload_listeners($interface);
         }
     }
 }

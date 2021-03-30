@@ -305,6 +305,8 @@ sub commit($self, $is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_ke
             $self->{parsed_config}{$interface_name}{mtime} = get_mtime($self->{parsed_config}{$interface_name}{config_path});
             $self->{n_conf_files}++ if (defined $is_new);
             $self->_reset_changed($interface_name);
+            # Notify listeners about a file change
+            $self->_call_reload_listeners($interface_name);
             close $fh;
         }
     }
