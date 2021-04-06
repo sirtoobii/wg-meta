@@ -124,7 +124,7 @@ does_throw('access deleted alias', (sub(@args) {$wg_meta->translate_alias(@args)
 # try to an alias which is already present
 does_throw('alias already known', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1', 1));
 
-# remove interface (and keep file)
+# remove interface
 $wg_meta->remove_interface('mini_wg1');
 @output = $wg_meta->get_interface_list();
 my @expected = ('mini_wg0');

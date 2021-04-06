@@ -505,8 +505,8 @@ sub _get_my_mtime($self, $interface) {
 
 sub _is_latest_data($self, $interface) {
     my $conf_path = $self->{wireguard_home} . $interface . ".conf";
-    my $t = $self->_get_my_mtime($interface);
-    my $s = get_mtime($conf_path);
+    # my $t = $self->_get_my_mtime($interface);
+    # my $s = get_mtime($conf_path);
     return $self->_get_my_mtime($interface) ge get_mtime($conf_path);
 }
 

@@ -54,7 +54,7 @@ our $VERSION = "0.0.0"; # do not change manually, this variable is updated when 
 use constant FALSE => 0;
 use constant TRUE => 1;
 
-=head3 new($wireguard_home [, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-'])
+=head3 new($wireguard_home [, $wg_meta_prefix, $wg_meta_disabled_prefix, $custom_attributes])
 
 Creates a new instance of this class.
 
@@ -68,14 +68,30 @@ C<$wireguard_home> Path to Wireguard configuration files. Make sure the path end
 
 =item *
 
-C<[, $wg_meta_prefix]> A custom wg-meta comment prefix, has to begin with either `;` or `#`.
+C<[$wg_meta_prefix]> A custom wg-meta comment prefix, has to begin with either `;` or `#`.
 It is recommended to not change this setting, especially in a already deployed installation.
 
 =item *
 
-C<[, $wg_meta_disabled_prefix]> A custom prefix for the commented out (disabled) sections,
+C<[$wg_meta_disabled_prefix]> A custom prefix for the commented out (disabled) sections,
 has to begin with either `;` or `#` and must not be equal with C<$wg_meta_prefix>! (This is enforced and an exception is thrown if violated)
 It is recommended to not change this setting, especially in an already deployed installation.
+
+=item *
+
+C<[$custom_attributes]> A reference to a hash defining custom attributes. Expects the following structure:
+
+    {
+        'attr_key'     => {
+            'in_config_name' => 'In config name',
+            'validator'      => 'Ref to validation function'
+        },
+        'example'         => {
+            'in_config_name' => 'DNS',
+            'validator'      => \&accept_any
+        },
+        ...
+    }
 
 =back
 
@@ -84,25 +100,28 @@ B<Returns>
 An instance of WGmeta::Wrapper::Config
 
 =cut
-sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-') {
+sub new($class, $wireguard_home, $wg_meta_prefix = '#+', $wg_meta_disabled_prefix = '#-', $custom_attributes = undef) {
 
     if ($wg_meta_prefix eq $wg_meta_disabled_prefix) {
         die '`$wg_meta_prefix` and `$wg_meta_disabled_prefix` have to be different';
     }
 
+    if (defined $custom_attributes) {
+        for my $attr_key (keys %{$custom_attributes}) {
+            register_custom_attribute($attr_key, $custom_attributes->{$attr_key});
+        }
+    }
+
+    my $t = Wireguard::WGmeta::ValidAttributes::WG_META_ADDITIONAL;
+
     my ($parsed_config, $count) = _read_configs_from_folder($wireguard_home, $wg_meta_prefix, $wg_meta_disabled_prefix);
     my $self = {
-        'wireguard_home'           => $wireguard_home,
-        'wg_meta_prefix'           => $wg_meta_prefix,
-        'wg_meta_disabled_prefix'  => $wg_meta_disabled_prefix,
-        'n_conf_files'             => $count,
-        'parsed_config'            => $parsed_config,
-        'reload_listeners'         => {},
-        'wg_meta_attrs'            => Wireguard::WGmeta::ValidAttributes::WG_META_DEFAULT,
-        'wg_meta_additional_attrs' => Wireguard::WGmeta::ValidAttributes::WG_META_ADDITIONAL,
-        'wg_orig_interface_attrs'  => Wireguard::WGmeta::ValidAttributes::WG_ORIG_INTERFACE,
-        'wg_orig_peer_attrs'       => Wireguard::WGmeta::ValidAttributes::WG_ORIG_PEER,
-        'wg_quick_attrs'           => Wireguard::WGmeta::ValidAttributes::WG_QUICK,
+        'wireguard_home'          => $wireguard_home,
+        'wg_meta_prefix'          => $wg_meta_prefix,
+        'wg_meta_disabled_prefix' => $wg_meta_disabled_prefix,
+        'n_conf_files'            => $count,
+        'parsed_config'           => $parsed_config,
+        'reload_listeners'        => {},
     };
     bless $self, $class;
     return $self;
@@ -1043,7 +1062,7 @@ B<Parameters>
 
 =item
 
-C<$ref_handler> Reference to a handler function. The followin signature is expected:
+C<$ref_handler> Reference to a handler function. The following signature is expected:
 
     sub my_handler_function($interface, $ref_list_args){
         ...
