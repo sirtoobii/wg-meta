@@ -32,7 +32,7 @@ Please refer to L<Wireguard::WGmeta::Wrapper::ConfigT>
  # disable peer (this comments out the peer in the configuration file
  wg_meta->disable_by_alias('wg0', 'some_fancy_alias');
 
- # write config (if parameter is set to True, the config is overwritten, if set to False the resulting file is suffixed with '_not_applied'
+ # write config (if parameter is set to True, the config is overwritten, if set to False the resulting file is suffixed with '.not_applied'
  wg_meta->commit(1);
 
 =head1 METHODS
@@ -76,6 +76,10 @@ It is recommended to not change this setting, especially in a already deployed i
 C<[$wg_meta_disabled_prefix]> A custom prefix for the commented out (disabled) sections,
 has to begin with either `;` or `#` and must not be equal with C<$wg_meta_prefix>! (This is enforced and an exception is thrown if violated)
 It is recommended to not change this setting, especially in an already deployed installation.
+
+=item *
+
+C<[$not_applied_suffix]> Suffix to add if C<commit()> is set to not override an existing config.
 
 =item *
 
@@ -405,6 +409,16 @@ sub is_valid_interface($self, $interface) {
     return (exists $self->{parsed_config}{$interface});
 }
 
+
+=head3 is_valid_alias($interface, $alias)
+
+Simply checks if an alias is valid for spec
+
+=cut
+sub is_valid_alias($self, $interface, $alias) {
+    return exists $self->{parsed_config}{$interface}{alias_map}{$alias}
+}
+
 =head3 is_valid_identifier($interface, $identifier)
 
 Checks if an identifier is valid for a given interface
@@ -540,8 +554,8 @@ B<Parameters>
 
 =item
 
-C<[$is_hot_config = FALSE])> If set to TRUE, the existing configuration is overwritten. Otherwise,
-the suffix '_not_applied' is appended to the filename
+C<[$is_hot_config = FALSE])> If set to TRUE, the existing configuration is overwritten (and possibly existing, not applied configs are deleted). Otherwise,
+the suffix '.not_applied' is appended to the filename
 
 =item
 
@@ -561,7 +575,7 @@ None
 =cut
 sub commit($self, $is_hot_config = FALSE, $plain = FALSE) {
     for my $interface (keys %{$self->{parsed_config}}) {
-        if ($self->_has_changed($interface) || $force) {
+        if ($self->_has_changed($interface)) {
             my $new_config = create_wg_config($self->{parsed_config}{$interface}, $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix}, $plain);
             my $fh;
             my $hot_path = $self->{wireguard_home} . $interface . '.conf';
@@ -959,7 +973,8 @@ sub get_peer_count($self, $interface = undef) {
 =head3 may_reload_from_disk($interface [, $new = FALSE])
 
 Method to reload an interface configuration from disk. Also useful to add an newly (externally) created
-interface on-the-fly.
+interface on-the-fly. If a config file with a I<.not_applied> suffix is found (and its mtime is newer
+than the original one), it is taken as source for reloading the configuration data.
 
 B<Parameters>
 
@@ -972,6 +987,10 @@ C<$interface> A valid interface name
 =item *
 
 C<[$new = FALSE]> If set to True, the parser looks at C<$wireguard_home> for this new interface config.
+
+=item *
+
+C<[$force = FALSE]> When set to True, the configuration is reloaded regardless of its mtime.
 
 =back
 

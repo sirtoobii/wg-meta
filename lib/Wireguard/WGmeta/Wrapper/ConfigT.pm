@@ -127,6 +127,12 @@ sub is_valid_interface($self, $interface) {
     return $self->SUPER::is_valid_interface($interface);
 }
 
+
+sub is_valid_alias($self, $interface, $alias){
+    $self->may_reload_from_disk($interface);
+    return $self->SUPER::is_valid_alias($interface, $alias);
+}
+
 =head3 is_valid_identifier($interface, $identifier)
 
 L<Wireguard::WGmeta::Wrapper::Config/is_valid_identifier($interface, $identifier)>
@@ -283,7 +289,7 @@ sub commit($self, $is_hot_config = FALSE, $plain = FALSE, $ref_hash_integrity_ke
             if (-e $file_name) {
 
                 # in this case open the file for RW
-                open $fh, '+<', $file_name;
+                open $fh, '+<', $file_name or die "Could not open $file_name: $!";
                 flock $fh, LOCK_EX;
                 my $config_contents = read_file($fh, TRUE);
                 $on_disk_config = parse_wg_config($config_contents, $interface_name, $self->{wg_meta_prefix}, $self->{wg_meta_disabled_prefix});
