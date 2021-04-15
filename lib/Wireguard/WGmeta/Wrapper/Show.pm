@@ -70,6 +70,10 @@ sub new($class, $wg_show_dump) {
     return $self;
 }
 
+sub reload($self, $wg_show_dump){
+    $self->{parsed_show} = wg_show_dump_parser($wg_show_dump);
+}
+
 =head3 get_interface_list()
 
 Returns a list with all available interface names

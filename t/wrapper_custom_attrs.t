@@ -28,7 +28,7 @@ my $custom_attr_config = {
     }
 };
 
-my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR, '#+', '#-', $custom_attr_config);
+my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR, '#+', '#-', '.not_applied', $custom_attr_config);
 
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'email', 'test@test.com', 1);
 
@@ -56,7 +56,7 @@ ok $actual eq $expected, 'generate config';
 $wg_meta->commit(1,1);
 
 # parser test
-$wg_meta->reload_from_disk('mini_wg0');
+$wg_meta->may_reload_from_disk('mini_wg0');
 my %section = $wg_meta->get_interface_section('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY');
 
 ok $section{email} eq 'test@test.com', 'parse custom attr';

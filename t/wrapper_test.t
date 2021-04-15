@@ -145,7 +145,7 @@ sub _my_reload_listener($interface, $ref_args) {
 
 
 $wg_meta->register_on_reload_listener(\&_my_reload_listener, 'bla', [ 'hello from listener' ]);
-$wg_meta->reload_from_disk('mini_wg0');
+$wg_meta->may_reload_from_disk('mini_wg0', 0, 1);
 
 ok $listener_result, 'Reload listener';
 
