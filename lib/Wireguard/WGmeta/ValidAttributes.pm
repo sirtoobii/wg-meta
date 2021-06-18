@@ -73,6 +73,8 @@ our @EXPORT = qw(
     ATTR_TYPE_IS_WG_ORIG_INTERFACE
     ATTR_TYPE_IS_WG_ORIG_PEER
     ATTR_TYPE_IS_UNKNOWN
+    NAME_2_KEYS_MAPPING
+    NAME_2_CONFIG
     get_attr_config
     decide_attr_type
     register_custom_attribute
@@ -230,6 +232,14 @@ sub _create_inconfig_name_mapping() {
     return $names2key;
 }
 
+sub _create_name2inconfig_mapping() {
+    my $key2names = {};
+    map {$key2names->{$_} = WG_ORIG_PEER->{$_}{in_config_name};} (keys %{+WG_ORIG_PEER});
+    map {$key2names->{$_} = WG_ORIG_INTERFACE->{$_}{in_config_name};} (keys %{+WG_ORIG_INTERFACE});
+    map {$key2names->{$_} = WG_QUICK->{$_}{in_config_name};} (keys %{+WG_QUICK});
+    return $key2names;
+}
+
 =head3 INVERSE_ATTR_TYPE_MAPPING
 
 [Generated] Static mapping from I<attr_key>attr_key to I<attr_type>.
@@ -243,6 +253,8 @@ use constant INVERSE_ATTR_TYPE_MAPPING => _create_inverse_mapping;
 
 =cut
 use constant NAME_2_KEYS_MAPPING => _create_inconfig_name_mapping;
+
+use constant NAME_2_CONFIG => _create_name2inconfig_mapping;
 
 =head1 METHODS
 
