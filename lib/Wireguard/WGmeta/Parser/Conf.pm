@@ -3,8 +3,16 @@ use strict;
 use warnings FATAL => 'all';
 use experimental 'signatures';
 
+use constant IS_WG_META => 3;
+use constant IS_ROOT => 4;
+use constant IS_NORMAL => 5;
+
+use constant INTERNAL_KEY_PREFIX => 'int_';
+
 use base 'Exporter';
-our @EXPORT = qw(parse_raw_wg_config);
+our @EXPORT = qw(parse_raw_wg_config IS_WG_META IS_NORMAL IS_ROOT INTERNAL_KEY_PREFIX);
+
+
 
 sub test() {
 
@@ -12,11 +20,12 @@ sub test() {
         my $IDENT_KEY = '';
         my $IS_ACTIVE_COUNTER = 0;
         my $IS_ROOT = 1;
-        my $SECTION_TYPE = '';
+        my $SECTION_TYPE = 'Root';
         my $IS_WG_META = 0;
 
         my $parsed_config = {};
-        my @config_order;
+        my @peer_order;
+        my @root_order;
 
         my $section_data = {};
         my @section_order;
@@ -29,14 +38,14 @@ sub test() {
                 $section_data = {};
             }
             else {
-                die "`$section_data->{$IDENT_KEY}` is already present" if exists($parsed_config->{$section_data->{$IDENT_KEY}});
-                my $is_active = $IS_ACTIVE_COUNTER == 1 ? 0 : 1;
-                &{$on_new_section}($section_data->{$IDENT_KEY}, $SECTION_TYPE, $is_active);
-                $section_data->{section_order} = [ @section_order ];
-                $section_data->{is_active} = $is_active;
-                $section_data->{type} = $SECTION_TYPE;
-                $parsed_config->{$section_data->{$IDENT_KEY}} = { %$section_data };
-                push @config_order, $section_data->{$IDENT_KEY};
+                my $is_disabled = $IS_ACTIVE_COUNTER == 1 ? 1 : 0;
+                my $identifier = &{$on_new_section}($section_data->{$IDENT_KEY}, $SECTION_TYPE, $is_disabled);
+                die "`$identifier` is already present" if exists($parsed_config->{$identifier});
+                $section_data->{INTERNAL_KEY_PREFIX . 'order'} = [ @section_order ];
+                $section_data->{INTERNAL_KEY_PREFIX . 'disabled'} = $is_disabled;
+                $section_data->{INTERNAL_KEY_PREFIX . 'type'} = $SECTION_TYPE;
+                $parsed_config->{$identifier} = { %$section_data };
+                push @peer_order, $identifier;
                 $section_data = {};
             }
 
@@ -97,12 +106,13 @@ sub test() {
                 $definitive_value = $line;
             }
             $section_data->{$definitive_key} = $definitive_value;
-            $IS_ROOT ? push @config_order, $definitive_key : push @section_order, $definitive_key;
+            $IS_ROOT ? push @root_order, $definitive_key : push @section_order, $definitive_key;
             $generic_autokey++;
         }
         # and finalize
         &$section_handler();
-        $parsed_config->{config_order} = \@config_order;
+        $parsed_config->{INTERNAL_KEY_PREFIX . 'section_order'} = \@peer_order;
+        $parsed_config->{INTERNAL_KEY_PREFIX . 'root_order'} = \@root_order;
 
         return $parsed_config;
     }

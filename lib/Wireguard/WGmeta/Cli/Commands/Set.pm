@@ -93,7 +93,7 @@ sub cmd_help($self) {
 
 sub _set_values($self, $interface, $identifier, $ref_hash_values) {
     for my $key (keys %{$ref_hash_values}) {
-        $self->{wg_meta}->set($interface, $identifier, $key, $ref_hash_values->{$key}, TRUE, \&_forward);
+        $self->{wg_meta}->set2($interface, $identifier, $key, $ref_hash_values->{$key});
     }
 }
 

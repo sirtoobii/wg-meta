@@ -21,9 +21,7 @@ sub entry_point($self) {
 sub _run_command($self) {
     my $interface = $self->_retrieve_or_die($self->{input_args}, 0);
     my $identifier = $self->_retrieve_or_die($self->{input_args}, 1);
-    eval {
-        $identifier = $self->{wg_meta}->translate_alias($interface, $identifier);
-    };
+    $identifier = $self->{wg_meta}->try_translate_alias($interface, $identifier);
     $self->{wg_meta}->disable($interface, $identifier);
 
     if (defined $ENV{IS_TESTING}) {

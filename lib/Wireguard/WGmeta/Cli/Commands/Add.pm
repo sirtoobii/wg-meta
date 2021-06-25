@@ -35,7 +35,6 @@ sub entry_point($self) {
 sub _run_command($self) {
     my ($iface_privkey, $iface_listen) = $self->{wg_meta}->add_peer(
         $self->{interface},
-        $self->{name},
         $self->{ips},
         $self->{pub_key},
         $self->{alias}
