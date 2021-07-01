@@ -113,11 +113,12 @@ if (@ARGV && $ARGV[0] eq '--version') {
 }
 
 # command line argument parser
-eval {
-    route_command(\@ARGV);
-};
-if ($@) {
-    prettify_message($@, 0);
-}
+route_command(\@ARGV);
+# eval {
+#     route_command(\@ARGV);
+# };
+# if ($@) {
+#     prettify_message($@, 0);
+# }
 
 

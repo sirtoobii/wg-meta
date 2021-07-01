@@ -109,7 +109,7 @@ Exception if the user has insufficient privileges .
 sub check_privileges($self) {
     if (not -w $self->{wireguard_home}) {
         my $username = getpwuid($<);
-        die "Insufficient privileges - `$username` has rw no permissions to `$self->{wireguard_home}`. You probably forgot `sudo`";
+        die "Insufficient privileges - `$username` has no rw permissions to `$self->{wireguard_home}`. You probably forgot `sudo`";
     }
 }
 

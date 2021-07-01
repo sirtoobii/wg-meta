@@ -122,7 +122,7 @@ ok $actual eq $expected, 'removed peer, content';
 ok $wg_meta->get_peer_count('mini_wg1') == 1, 'peer count after removal [wg1]';
 
 # test if the alias got removed too
-does_throw('access deleted alias', (sub(@args) {$wg_meta->translate_alias(@args)}), ('mini_wg1', 'Alias1'));
+ok !$wg_meta->is_valid_alias('mini_wg1', 'Alias1'), 'access deleted alias';
 
 # try to an alias which is already present
 does_throw('alias already known', \&set_wrapper, ('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1'));

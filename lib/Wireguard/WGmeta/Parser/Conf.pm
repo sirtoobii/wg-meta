@@ -42,7 +42,7 @@ sub test() {
                 my $identifier = &{$on_new_section}($section_data->{$IDENT_KEY}, $SECTION_TYPE, $is_disabled);
                 die "`$identifier` is already present" if exists($parsed_config->{$identifier});
                 $section_data->{INTERNAL_KEY_PREFIX . 'order'} = [ @section_order ];
-                $section_data->{INTERNAL_KEY_PREFIX . 'disabled'} = $is_disabled;
+                $section_data->{'disabled'} = $is_disabled;
                 $section_data->{INTERNAL_KEY_PREFIX . 'type'} = $SECTION_TYPE;
                 $parsed_config->{$identifier} = { %$section_data };
                 push @peer_order, $identifier;

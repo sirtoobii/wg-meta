@@ -21,6 +21,8 @@ use experimental 'signatures';
 
 use Wireguard::WGmeta::Validator;
 
+our $VERSION = "0.0.0";
+
 =head1 ATTRIBUTE TYPES
 
 =cut
@@ -188,6 +190,11 @@ use constant KNOWN_ATTRIBUTES => {
         'type'           => ATTR_TYPE_IS_WG_ORIG_PEER,
         'validator'      => \&accept_any
     },
+};
+
+
+use constant KNOWN_WG_SHOW => {
+
 };
 
 sub _create_inconfig_name_mapping() {

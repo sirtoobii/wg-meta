@@ -93,8 +93,15 @@ sub cmd_help($self) {
 
 sub _set_values($self, $interface, $identifier, $ref_hash_values) {
     for my $key (keys %{$ref_hash_values}) {
-        $self->{wg_meta}->set2($interface, $identifier, $key, $ref_hash_values->{$key});
+        $self->{wg_meta}->set2($interface, $identifier, $key, $ref_hash_values->{$key}, \&_unknown_attr_handler);
     }
+}
+
+sub _unknown_attr_handler($attribute, $value){
+    my $t = substr $attribute, 0, 1;
+    die "`$attribute` is unknown, please add `+` as prefix to add it" unless $t eq '+';
+    my $s = substr $attribute, 1;
+    return (substr $attribute, 1), $value;
 }
 
 sub _forward($interface, $identifier, $attribute, $value) {

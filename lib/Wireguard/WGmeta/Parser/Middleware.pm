@@ -94,8 +94,8 @@ sub create_wg_config2($ref_interface_config, $wg_meta_prefix = '#+', $disabled_p
         }
         else {
             # First lets check if the following section is active'int_disabled'
-            my $is_disabled = (exists $ref_interface_config->{$identifier}{INTERNAL_KEY_PREFIX . 'disabled'}
-                and $ref_interface_config->{$identifier}{INTERNAL_KEY_PREFIX . 'disabled'} == 1) ? $disabled_prefix : '';
+            my $is_disabled = (exists $ref_interface_config->{$identifier}{'disabled'}
+                and $ref_interface_config->{$identifier}{'disabled'} == 1) ? $disabled_prefix : '';
 
             # Add [Interface] or [Peer]
             my $t = $is_disabled;

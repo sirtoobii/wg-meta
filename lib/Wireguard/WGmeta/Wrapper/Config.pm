@@ -199,8 +199,6 @@ sub set2($self, $interface, $identifier, $attribute, $value, $unknown_callback =
     die "Invalid attribute value `$value` for `$attribute`" unless $self->attr_value_is_valid($attribute, $value);
 
     unless (exists $self->{parsed_config}{$interface}{$identifier}{$attribute}) {
-        # the attribute does not (yet) exist in the configuration, lets add it to the list
-        push @{$self->{parsed_config}{$interface}{$identifier}{INTERNAL_KEY_PREFIX . 'order'}}, $attribute;
 
         # also add it to observed wg-meta attributes if its not a known wg or wg-quick attribute
         if (not exists $self->{parsed_config}{$interface}{observed_wg_meta_attrs}{$attribute}) {
@@ -209,7 +207,8 @@ sub set2($self, $interface, $identifier, $attribute, $value, $unknown_callback =
             }
             else {
                 if (defined $unknown_callback) {
-                    &{$unknown_callback}($attribute, $value);
+                    ($attribute, $value) = &{$unknown_callback}($attribute, $value);
+                    my $t = 1;
                 }
                 else {
                     warn "Attribute `$attribute` was previously not known on interface `$interface`";
@@ -217,6 +216,8 @@ sub set2($self, $interface, $identifier, $attribute, $value, $unknown_callback =
                 $self->{parsed_config}{$interface}{observed_wg_meta_attrs}{$attribute} = 1;
             }
         }
+        # the attribute does not (yet) exist in the configuration, lets add it to the list
+        push @{$self->{parsed_config}{$interface}{$identifier}{INTERNAL_KEY_PREFIX . 'order'}}, $attribute;
     }
     if ($attribute eq 'alias') {
         $self->_update_alias_map($interface, $identifier, $value);
@@ -310,7 +311,7 @@ sub enable($self, $interface, $identifier) {
 sub _toggle($self, $interface, $identifier, $enable) {
     $identifier = $self->try_translate_alias($interface, $identifier);
     # we can bypass an "expensive" set() here
-    $self->{parsed_config}{$interface}{$identifier}{INTERNAL_KEY_PREFIX . 'disabled'} = $enable;
+    $self->{parsed_config}{$interface}{$identifier}{'disabled'} = $enable;
     $self->_set_changed($interface);
 }
 

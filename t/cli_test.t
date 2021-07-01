@@ -74,10 +74,15 @@ Endpoint = 198.51.100.102:51871
 ';
 # just peers but also with alias
 @cmd_line = qw(set mini_wg1 peer WG_1_PEER_A_PUBLIC_KEY name set_through_cli allowed-ips 10.0.6.11/32 peer Alias1 endpoint test.test1.com:8324);
+eval {
+    route_command(\@cmd_line);
+} or ok 1, 'set unknown attribute w/o prefix';
+
+@cmd_line = qw(set mini_wg1 peer WG_1_PEER_A_PUBLIC_KEY +name set_through_cli allowed-ips 10.0.6.11/32 peer Alias1 endpoint test.test1.com:8324);
 route_command(\@cmd_line);
 
 $actual = read_file(TEST_DIR . 'mini_wg1.conf');
-ok $actual eq $expected, 'set command peers with alias';
+ok $actual eq $expected, 'set command peers with alias and prefix';
 
 $expected = '
 [Interface]
