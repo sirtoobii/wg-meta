@@ -18,7 +18,7 @@ my $initial_wg1 = read_file(TEST_DIR . 'mini_wg1.conf');
 
 my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR);
 
-$wg_meta->set2('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'bli_blu');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'bli_blu');
 $wg_meta->commit(0,1);
 
 $wg_meta->may_reload_from_disk('mini_wg0');
@@ -27,7 +27,7 @@ my %section = $wg_meta->get_interface_section('mini_wg0', 'WG_0_PEER_A_PUBLIC_KE
 
 ok $section{name} eq 'bli_blu', 'secure apply and reload';
 
-$wg_meta->set2('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'new_value_hot');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'new_value_hot');
 $wg_meta->commit(1,1);
 
 $wg_meta->may_reload_from_disk('mini_wg0');

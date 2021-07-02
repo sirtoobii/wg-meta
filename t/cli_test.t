@@ -140,7 +140,6 @@ Endpoint = 198.51.100.102:51871
 route_command(\@cmd_line);
 
 $actual = read_file(TEST_DIR . 'mini_wg1.conf');
-write_file('ou.conf',$actual);
 ok $actual eq $expected, 'and enable again peer';
 
 # write back initial configs

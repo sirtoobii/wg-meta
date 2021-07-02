@@ -64,18 +64,18 @@ Endpoint = 198.51.100.101:60001
 ';
 
 # normal attributes (mixed type)
-$wg_meta->set2('mini_wg0', 'mini_wg0', 'listen-port', 60000);
-$wg_meta->set2('mini_wg0', 'mini_wg0', 'private-key', 'OHLK9lBHFqnu+9olAnyUN11pCeKP4uW6fwMAeRSy2F8=');
-$wg_meta->set2('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'endpoint', '198.51.100.101:60001');
+$wg_meta->set('mini_wg0', 'mini_wg0', 'listen-port', 60000);
+$wg_meta->set('mini_wg0', 'mini_wg0', 'private-key', 'OHLK9lBHFqnu+9olAnyUN11pCeKP4uW6fwMAeRSy2F8=');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'endpoint', '198.51.100.101:60001');
 
 # wg-meta attrs
-$wg_meta->set2('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'Name_by_test1');
-$wg_meta->set2('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'Name_by_test1');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1');
 
 # wg-meta update alias by alias
-$wg_meta->set2('mini_wg0', 'alias1', 'alias', 'alias2');
+$wg_meta->set('mini_wg0', 'alias1', 'alias', 'alias2');
 
-my $actual = $wg_meta->_create_config('mini_wg0', 1);
+my $actual = $wg_meta->create_config('mini_wg0', 1);
 ok $actual eq $expected, 'set valid attrs';
 
 # add peer
@@ -90,8 +90,8 @@ AllowedIPs = 10.0.0.9/32
 #+Alias = new_peer
 ';
 # and set an alias on this new peer
-$wg_meta->set2('mini_wg0', 'sa9sXzMC5h4oE+38M38D1bcakH7nQBChAN1ib30lODc=', 'alias', 'new_peer');
-$actual = $wg_meta->_create_config('mini_wg0', 1);
+$wg_meta->set('mini_wg0', 'sa9sXzMC5h4oE+38M38D1bcakH7nQBChAN1ib30lODc=', 'alias', 'new_peer');
+$actual = $wg_meta->create_config('mini_wg0', 1);
 ok $actual eq $expected, 'add peer, content';
 
 $expected = '
@@ -115,7 +115,7 @@ $wg_meta->disable('mini_wg1','WG_1_PEER_B_PUBLIC_KEY');
 
 # remove peer
 $wg_meta->remove_peer('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY');
-$actual = $wg_meta->_create_config('mini_wg1', 1);
+$actual = $wg_meta->create_config('mini_wg1', 1);
 ok $actual eq $expected, 'removed peer, content';
 
 # check peer count after removal
@@ -148,12 +148,12 @@ ok $listener_result, 'Reload listener';
 
 # Unknown attribute callback
 my $h_res = 0;
-$wg_meta->set2('mini_wg0', 'mini_wg0', 't1', 'tv', sub($attr, $val){$h_res = 1 if ($attr eq 't1' and $val eq 'tv');});
+$wg_meta->set('mini_wg0', 'mini_wg0', 't1', 'tv', sub($attr, $val){$h_res = 1 if ($attr eq 't1' and $val eq 'tv');});
 
 ok $h_res, 'Unknown attr callback [Interface]';
 
 $h_res = 0;
-$wg_meta->set2('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 't2', 'tv', sub($attr, $val){$h_res = 1 if ($attr eq 't2' and $val eq 'tv');});
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 't2', 'tv', sub($attr, $val){$h_res = 1 if ($attr eq 't2' and $val eq 'tv');});
 
 ok $h_res, 'Unknown attr callback [Peer]';
 
@@ -185,7 +185,7 @@ write_file($filename_2, $initial_wg0);
 
 # helper methods
 sub set_wrapper(@args) {
-    $wg_meta->set2(@args);
+    $wg_meta->set(@args);
 }
 
 sub does_throw($test_name, $fun, @args) {

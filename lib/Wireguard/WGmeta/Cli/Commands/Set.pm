@@ -16,7 +16,6 @@ sub entry_point($self) {
     else {
         $self->check_privileges();
         # would be very nice if we can set a type hint here...possible?
-        $self->{'wg_meta'} = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
         $self->_run_command();
     }
 }
@@ -40,10 +39,10 @@ sub _run_command($self) {
     $self->_apply_change_set($interface, @input_args[$cur_start .. $offset]);
     if (defined $ENV{IS_TESTING}) {
         # omit header
-        $self->{wg_meta}->commit(1, 1);
+        $self->wg_meta->commit(1, 1);
     }
     else {
-        $self->{wg_meta}->commit(1, 0);
+        $self->wg_meta->commit(1, 0);
     }
 
 }
@@ -59,7 +58,7 @@ sub _apply_change_set($self, $interface, @change_set) {
         $identifier = $self->_retrieve_or_die(\@change_set, 2);
 
         # try to resolve alias
-        $identifier = $self->{wg_meta}->try_translate_alias($interface, $identifier);
+        $identifier = $self->wg_meta->try_translate_alias($interface, $identifier);
 
         $offset += 2;
     }
@@ -88,25 +87,14 @@ sub _apply_change_set($self, $interface, @change_set) {
     $self->_set_values($interface, $identifier, \%args);
 }
 sub cmd_help($self) {
-    print "Usage: wg-meta set <interface> [attr1 value1] [attr2 value2] [peer {alias|public-key}] [attr1 value1] [attr2 value2] ...\n"
+    print "Usage: wg-meta set <interface> [attr1 value1] [attr2 value2] [peer {alias|public-key}] [attr1 value1] [attr2 value2] ...\n\n"
+        . "Notes:\n The interface aims to follow the official `wg set` specification\n";
 }
 
 sub _set_values($self, $interface, $identifier, $ref_hash_values) {
     for my $key (keys %{$ref_hash_values}) {
-        $self->{wg_meta}->set2($interface, $identifier, $key, $ref_hash_values->{$key}, \&_unknown_attr_handler);
+        $self->wg_meta->set($interface, $identifier, $key, $ref_hash_values->{$key}, \&Wireguard::WGmeta::Cli::Commands::Command::_unknown_attr_handler);
     }
-}
-
-sub _unknown_attr_handler($attribute, $value){
-    my $t = substr $attribute, 0, 1;
-    die "`$attribute` is unknown, please add `+` as prefix to add it" unless $t eq '+';
-    my $s = substr $attribute, 1;
-    return (substr $attribute, 1), $value;
-}
-
-sub _forward($interface, $identifier, $attribute, $value) {
-    # this is just as stub
-    print("Forwarded to original wg command: `$attribute = $value`");
 }
 
 1;

@@ -29,7 +29,7 @@ my $custom_attr_config = {
 
 my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR, '#+', '#-', '.not_applied', $custom_attr_config);
 
-$wg_meta->set2('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'email', 'test@test.com');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'email', 'test@test.com');
 
 ok $validator_called, 'validator called';
 
@@ -49,7 +49,7 @@ Endpoint = 198.51.100.101:51871
 #+email = test@test.com
 ';
 
-my $actual = $wg_meta->_create_config('mini_wg0', 1);
+my $actual = $wg_meta->create_config('mini_wg0', 1);
 ok $actual eq $expected, 'generate config';
 
 $wg_meta->commit(1,1);

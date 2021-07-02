@@ -441,7 +441,7 @@ None
 
 sub _get_my_mtime($self, $interface) {
     if (exists $self->{parsed_config}{$interface}) {
-        return $self->{parsed_config}{$interface}{mtime};
+        return $self->{parsed_config}{$interface}{INTERNAL_KEY_PREFIX. 'mtime'};
     }
     else {
         return 0;
@@ -474,7 +474,7 @@ sub _sync_interfaces($self) {
     }
     # scan for deleted interfaces
     for my $internal_interface (keys %{$self->{parsed_config}}) {
-        if (not -e $self->{parsed_config}{$internal_interface}{config_path}) {
+        if (not -e $self->{parsed_config}{$internal_interface}{INTERNAL_KEY_PREFIX. 'config_path'}) {
             warn "Interface `$internal_interface` has been deleted in the meantime" if $self->_has_changed($internal_interface);
             delete $self->{parsed_config}{$internal_interface};
         }

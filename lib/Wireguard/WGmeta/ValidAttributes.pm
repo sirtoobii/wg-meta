@@ -5,12 +5,18 @@ WGmeta::ValidAttributes - Supported attribute configurations
 =head1 DESCRIPTION
 
 In this module all supported attributes are configured (and as well their possible validation function). Attributes configured
-here affect how the parser stores them and which attributes are supported by the
-L<Wireguard::WGmeta::Wrapper::Config/set($interface, $identifier, $attribute, $value [, $allow_non_meta, $forward_function])>.
+here affect how the parser stores them
 
 =head1 SYNOPSIS
 
-Add your own attributes to L</WG_META_ADDITIONAL>
+    use Wireguard::WGmeta::ValidAttributes;
+
+    my $attr_type = get_attr_type($attr_name);
+
+    if ($attr_type == ATTR_TYPE_IS_WG_META){
+        print "Yiii-haa";
+    }
+
 
 =cut
 
@@ -34,13 +40,6 @@ our $VERSION = "0.0.0";
 =cut
 use constant ATTR_TYPE_IS_WG_META => 10;
 
-use constant ATTR_TYPE_IS_RESERVED => 9;
-=head3 ATTR_TYPE_IS_WG_META_CUSTOM
-
-Your custom wg-meta attributes
-
-=cut
-use constant ATTR_TYPE_IS_WG_META_CUSTOM => 11;
 =head3 ATTR_TYPE_IS_WG_QUICK
 
 wg-quick attribute
@@ -72,7 +71,6 @@ use constant FALSE => 0;
 use base 'Exporter';
 our @EXPORT = qw(
     ATTR_TYPE_IS_WG_META
-    ATTR_TYPE_IS_WG_META_CUSTOM
     ATTR_TYPE_IS_WG_QUICK
     ATTR_TYPE_IS_WG_ORIG_INTERFACE
     ATTR_TYPE_IS_WG_ORIG_PEER
@@ -82,10 +80,10 @@ our @EXPORT = qw(
     get_attr_type
 );
 
-=head1 ATTRIBUTE SETS
 
-General remark: If you want to add your own attributes add them to L</WG_META_ADDITIONAL> - all other config sets
-should only be modified on (possible) future changes in attribute configurations in Wireguard or wg-quick!
+=head3 KNOWN_ATTRIBUTES
+
+Mapping of all known attributes
 
 =cut
 
@@ -192,11 +190,6 @@ use constant KNOWN_ATTRIBUTES => {
     },
 };
 
-
-use constant KNOWN_WG_SHOW => {
-
-};
-
 sub _create_inconfig_name_mapping() {
     my $names2key = {};
     map {$names2key->{KNOWN_ATTRIBUTES->{$_}{in_config_name}} = $_;} (keys %{+KNOWN_ATTRIBUTES});
@@ -210,6 +203,13 @@ sub _create_inconfig_name_mapping() {
 
 =cut
 use constant NAME_2_KEYS_MAPPING => _create_inconfig_name_mapping;
+
+
+=head3 get_attr_type($attr_name)
+
+Shorthand for getting the attribute type
+
+=cut
 
 sub get_attr_type($attr_name) {
     return KNOWN_ATTRIBUTES->{$attr_name}{type} if exists KNOWN_ATTRIBUTES->{$attr_name};

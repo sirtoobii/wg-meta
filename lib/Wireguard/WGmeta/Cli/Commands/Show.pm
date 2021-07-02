@@ -83,8 +83,7 @@ sub entry_point($self) {
 
 sub _run_command($self, $interface, $is_dump, $ref_attr_list) {
 
-    my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new($self->{wireguard_home});
-    if (not $interface eq 'all' and not $wg_meta->is_valid_interface($interface)) {
+    if (not $interface eq 'all' and not $self->wg_meta->is_valid_interface($interface)) {
         die "Invalid interface `$interface`";
     }
     my $out;
@@ -103,16 +102,16 @@ sub _run_command($self, $interface, $is_dump, $ref_attr_list) {
         @interface_list = ($interface);
     }
     else {
-        @interface_list = $wg_meta->get_interface_list()
+        @interface_list = $self->wg_meta->get_interface_list()
     }
 
     my $use_default = defined $ref_attr_list ? 0 : 1;
     for my $printed_interface (sort @interface_list) {
         my $interface_is_active = $wg_show->iface_exists($printed_interface);
         my $state = 0;
-        for my $identifier ($wg_meta->get_section_list($printed_interface)) {
+        for my $identifier ($self->wg_meta->get_section_list($printed_interface)) {
             my %wg_show_section = ($interface_is_active) ? $wg_show->get_interface_section($printed_interface, $identifier) : ();
-            my %config_section = $wg_meta->get_interface_section($printed_interface, $identifier);
+            my %config_section = $self->wg_meta->get_interface_section($printed_interface, $identifier);
             my $type = $config_section{INTERNAL_KEY_PREFIX . 'type'};
             if ($use_default) {
                 $ref_attr_list = ($type eq 'Interface') ? $self->{default_attr_list_interface} : $self->{default_attr_list_peer}
@@ -128,7 +127,7 @@ sub _run_command($self, $interface, $is_dump, $ref_attr_list) {
                 $identifier = $config_section{'alias'} if exists $config_section{'alias'};
                 $state = ($config_section{'disabled'} == 0 and $interface_is_active) ? 1 : 0;
                 my $state_marker = ($state == 1) ? BOLD . GREEN . '●' . RESET : BOLD . RED . '●' . RESET;
-                $output .= $state_marker . BOLD . lc $type . ": " . RESET . $identifier . "\n";
+                $output .= $state_marker . BOLD . lc($type) . ": " . RESET . $identifier . "\n";
                 $output .= $self->_get_pretty_line(\%config_section, \%wg_show_section, $ref_attr_list) . "\n";
             }
 
@@ -191,7 +190,7 @@ sub _get_dump_line($self, $ref_config_section, $ref_show_section, $ref_attr_list
 }
 
 sub cmd_help($self) {
-    print "Usage: wg-meta show {interface} \n"
+    print "Usage: wg-meta show {interface|all} [attribute1, attribute2, ...] [dump] \n"
 }
 
 1;

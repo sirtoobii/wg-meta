@@ -32,12 +32,12 @@ ok $wg_meta2->is_valid_alias('mini_wg1', 'alias_out'), 'added from other instanc
 my %integrity_hashes1 = (
     'PUBLIC_KEY_PEER_OUTSIDE_THREAD' => $wg_meta1->calculate_sha_from_internal('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD')
 );
-$wg_meta1->set2('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD', 'name', 'Set by instance 1');
+$wg_meta1->set('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD', 'name', 'Set by instance 1');
 
 my %integrity_hashes2 = (
     'WG_1_PEER_A_PUBLIC_KEY' => $wg_meta2->calculate_sha_from_internal('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY')
 );
-$wg_meta2->set2('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2');
+$wg_meta2->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2');
 $wg_meta2->commit(1, 1, \%integrity_hashes2);
 $wg_meta1->commit(1, 1, \%integrity_hashes1);
 
@@ -50,12 +50,12 @@ ok {$wg_meta1->get_interface_section('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY')}->{na
 %integrity_hashes1 = (
     'WG_1_PEER_A_PUBLIC_KEY' => $wg_meta1->calculate_sha_from_internal('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY')
 );
-$wg_meta1->set2('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 1 [2]');
+$wg_meta1->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 1 [2]');
 
 %integrity_hashes2 = (
     'WG_1_PEER_A_PUBLIC_KEY' => $wg_meta2->calculate_sha_from_internal('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY')
 );
-$wg_meta2->set2('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2 [2]');
+$wg_meta2->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2 [2]');
 $wg_meta2->commit(1, 1, \%integrity_hashes2);
 eval {
     $wg_meta1->commit(1, 1, \%integrity_hashes1);
