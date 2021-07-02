@@ -19,13 +19,13 @@ allowed-ips and so on. Also all custom attributes have written in the exact same
 	sudo wg-meta show wg0
 
 	# output
-	●interface: wg0
+	interface: wg0
       private-key: WG_0_PEER_B_PRIVATE_KEY
       public-key: wg0d845RRItYcmcEW3i+dqatmja18F2P9ujy+lAtsBM=
       listen-port: 51888
       fwmark: off
 
-    ●peer: IPv6_only1
+    peer: IPv6_only1
       public-key: WG_0_PEER_A_PUBLIC_KEY
       preshared-key: PEER_A-PEER_B-PRESHARED_KEY
       allowed-ips: fdc9:281f:04d7:9ee9::1/128
@@ -46,11 +46,11 @@ allowed-ips and so on. Also all custom attributes have written in the exact same
 	sudo wg-meta show wg0 name description
 
     # output
-    ●interface: wg0
+    interface: wg0
       name: (none)
       description: (none)
 
-    ●peer: IPv6_only1
+    peer: IPv6_only1
       name: Fancy_meta_name
       description: Some Desc
 
