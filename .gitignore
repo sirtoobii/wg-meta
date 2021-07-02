@@ -11,3 +11,4 @@ Makefile
 !*/thirdparty/Makefile.am
 !*/thirdparty/cpanfile*snapshot
 !*/.debian/Makefile
+cover_db

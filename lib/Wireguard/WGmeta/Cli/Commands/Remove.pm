@@ -1,12 +1,10 @@
-package Wireguard::WGmeta::Cli::Commands::Enable;
+package Wireguard::WGmeta::Cli::Commands::Remove;
 use strict;
 use warnings FATAL => 'all';
-
 use experimental 'signatures';
 
 use Wireguard::WGmeta::Wrapper::Config;
 use parent 'Wireguard::WGmeta::Cli::Commands::Command';
-
 
 
 sub entry_point($self) {
@@ -18,11 +16,11 @@ sub entry_point($self) {
 }
 
 
-sub _run_command($self){
+sub _run_command($self) {
     my $interface = $self->_retrieve_or_die($self->{input_args}, 0);
     my $identifier = $self->_retrieve_or_die($self->{input_args}, 1);
     $identifier = $self->wg_meta->try_translate_alias($interface, $identifier);
-    $self->wg_meta->enable($interface, $identifier);
+    $self->wg_meta->remove_peer($interface, $identifier);
 
     if (defined $ENV{IS_TESTING}) {
         # omit header
@@ -33,9 +31,10 @@ sub _run_command($self){
     }
 }
 
+
 sub cmd_help($self) {
-    print "Usage: wg-meta enable <interface> {alias | public-key} \n";
-    exit();
+    print "Usage: wg-meta removepeer <interface> {alias | public-key} \n";
+    exit;
 }
 
 1;
