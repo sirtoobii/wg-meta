@@ -13,6 +13,10 @@ use Time::HiRes qw(usleep);
 use Wireguard::WGmeta::Wrapper::ConfigT;
 use Wireguard::WGmeta::Utils;
 
+my $unknown_handler = sub($attribute, $value) {
+    # Since unknown attribute handling is tested separately, we can safely ignore it
+    return $attribute, $value;
+};
 use constant TEST_DIR => $FindBin::Bin . '/test_data/';
 
 my $initial_wg0 = read_file(TEST_DIR . 'mini_wg0.conf');
@@ -22,7 +26,7 @@ my $wg_meta1 = Wireguard::WGmeta::Wrapper::ConfigT->new(TEST_DIR);
 my $wg_meta2 = Wireguard::WGmeta::Wrapper::ConfigT->new(TEST_DIR);
 
 $wg_meta1->add_peer('mini_wg1', '10.0.3.56/32', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD', 'alias_out');
-$wg_meta1->commit(1,1);
+$wg_meta1->commit(1, 1);
 
 ok $wg_meta2->is_valid_identifier('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD'), 'added from other instance [Pub-Key]';
 ok $wg_meta2->is_valid_alias('mini_wg1', 'alias_out'), 'added from other instance [Alias]';
@@ -32,18 +36,17 @@ ok $wg_meta2->is_valid_alias('mini_wg1', 'alias_out'), 'added from other instanc
 my %integrity_hashes1 = (
     'PUBLIC_KEY_PEER_OUTSIDE_THREAD' => $wg_meta1->calculate_sha_from_internal('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD')
 );
-$wg_meta1->set('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD', 'name', 'Set by instance 1');
+$wg_meta1->set('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD', 'name', 'Set by instance 1', $unknown_handler);
 
 my %integrity_hashes2 = (
     'WG_1_PEER_A_PUBLIC_KEY' => $wg_meta2->calculate_sha_from_internal('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY')
 );
-$wg_meta2->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2');
+$wg_meta2->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2', $unknown_handler);
 $wg_meta2->commit(1, 1, \%integrity_hashes2);
 $wg_meta1->commit(1, 1, \%integrity_hashes1);
 
-ok {$wg_meta2->get_interface_section('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD')}->{name} eq 'Set by instance 1', 'concurrent edit [1]';
-ok {$wg_meta1->get_interface_section('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY')}->{name} eq 'Set by instance 2', 'concurrent edit [2]';
-
+ok { $wg_meta2->get_interface_section('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD') }->{name} eq 'Set by instance 1', 'concurrent edit [1]';
+ok { $wg_meta1->get_interface_section('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY') }->{name} eq 'Set by instance 2', 'concurrent edit [2]';
 
 
 # concurrent edit (conflict)
@@ -68,8 +71,8 @@ $wg_meta2->add_peer('mini_wg0', '10.0.5.57/32', 'PUBLIC_KEY_PEER_ADDED_6', 'alia
 $wg_meta1->commit(1);
 $wg_meta2->commit(1);
 
-ok $wg_meta1->is_valid_identifier('mini_wg0','PUBLIC_KEY_PEER_ADDED_6'), 'the (not) lost peer [1]';
-ok $wg_meta2->is_valid_identifier('mini_wg0','PUBLIC_KEY_PEER_ADDED_5'), 'the (not) lost peer [2]';
+ok $wg_meta1->is_valid_identifier('mini_wg0', 'PUBLIC_KEY_PEER_ADDED_6'), 'the (not) lost peer [1]';
+ok $wg_meta2->is_valid_identifier('mini_wg0', 'PUBLIC_KEY_PEER_ADDED_5'), 'the (not) lost peer [2]';
 
 
 # ping pong
@@ -96,7 +99,7 @@ $wg_meta2->remove_interface('thread_iface1');
 $wg_meta2->commit(1);
 
 @actual = $wg_meta1->get_interface_list();
-ok eq_array(\@actual, [ 'mini_wg0', 'mini_wg1']), 'removed interface';
+ok eq_array(\@actual, [ 'mini_wg0', 'mini_wg1' ]), 'removed interface';
 
 # write back initial configs
 my ($filename_1, $filename_2) = (TEST_DIR . 'mini_wg1.conf', TEST_DIR . 'mini_wg0.conf');

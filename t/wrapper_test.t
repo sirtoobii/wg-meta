@@ -18,6 +18,10 @@ my $initial_wg1 = read_file(TEST_DIR . 'mini_wg1.conf');
 
 my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR);
 
+my $unknown_handler = sub($attribute, $value) {
+    # Since unknown attribute handling is tested separately, we can safely ignore it
+    return $attribute, $value;
+};
 
 # parser tests
 # interfaces
@@ -69,7 +73,7 @@ $wg_meta->set('mini_wg0', 'mini_wg0', 'private-key', 'OHLK9lBHFqnu+9olAnyUN11pCe
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'endpoint', '198.51.100.101:60001');
 
 # wg-meta attrs
-$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'Name_by_test1');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'Name_by_test1', $unknown_handler);
 $wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'alias', 'alias1');
 
 # wg-meta update alias by alias

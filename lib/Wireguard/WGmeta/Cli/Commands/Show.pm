@@ -125,7 +125,9 @@ sub _run_command($self, $interface, $is_dump, $ref_attr_list) {
             }
             else {
                 $identifier = $config_section{'alias'} if exists $config_section{'alias'};
-                $state = ($config_section{'disabled'} == 0 and $interface_is_active) ? 1 : 0;
+
+                # we only show a green dot when the peer appears in the show output
+                $state = ($interface_is_active and keys %wg_show_section > 1) ? 1 : 0;
                 my $state_marker = ($state == 1) ? BOLD . GREEN . '●' . RESET : BOLD . RED . '●' . RESET;
                 $output .= $state_marker . BOLD . lc($type) . ": " . RESET . $identifier . "\n";
                 $output .= $self->_get_pretty_line(\%config_section, \%wg_show_section, $ref_attr_list) . "\n";
@@ -191,6 +193,11 @@ sub _get_dump_line($self, $ref_config_section, $ref_show_section, $ref_attr_list
 
 sub cmd_help($self) {
     print "Usage: wg-meta show {interface|all} [attribute1, attribute2, ...] [dump] \n"
+        . "Notes:\n"
+        . "A green dot indicates an interface/peer's 'real' state which means that its currently possible\n"
+        . "to connect to this interface/peer.\n"
+        . "A red dot on the other hand indicates that its not possible to connect. This could mean not applied changes, \n"
+        . "a disabled peer or the parent interface is down. \n"
 }
 
 1;

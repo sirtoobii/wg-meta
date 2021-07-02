@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-WGmeta::Parser::Middleware - Middleware between the parser and wrapper classe(s)
+WGmeta::Parser::Middleware - Middleware between the parser and wrapper class(es)
 
 =head1 SYNOPSIS
 
@@ -36,7 +36,7 @@ use Wireguard::WGmeta::Utils;
 use base 'Exporter';
 our @EXPORT = qw(parse_wg_config2 create_wg_config2);
 
-our $VERSION = "0.0.0";
+our $VERSION = "0.3.0";
 
 =head3 parse_wg_config2($config_file_content, $interface_name [, $wg_meta_prefix, $disabled_prefix, $use_checksum])
 
@@ -266,7 +266,7 @@ sub create_wg_config2($ref_interface_config, $wg_meta_prefix = '#+', $disabled_p
             $new_config .= _write_line($identifier, $ref_interface_config->{$identifier}, '', $wg_meta_prefix);
         }
         else {
-            # First lets check if the following section is active'int_disabled'
+            # First lets check if the following section is active
             my $is_disabled = (exists $ref_interface_config->{$identifier}{'disabled'}
                 and $ref_interface_config->{$identifier}{'disabled'} == 1) ? $disabled_prefix : '';
 

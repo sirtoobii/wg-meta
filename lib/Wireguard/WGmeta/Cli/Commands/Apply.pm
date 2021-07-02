@@ -22,11 +22,11 @@ sub _run_command($self) {
 
     # please note that there ar potential problems with this commend as mentioned here: https://github.com/WireGuard/wireguard-tools/pull/3
     my $cmd_line = "su -c 'wg syncconf $interface <(wg-quick strip $interface)'";
-    unless (defined $ENV{WG_META_NO_WG}) {
+    unless (defined $ENV{WGmeta_NO_WG}) {
         run_external($cmd_line);
+    } else  {
+        print "Faked apply \n";
     }
-    print "Faked apply \n";
-
 }
 
 sub cmd_help($self) {

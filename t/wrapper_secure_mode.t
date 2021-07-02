@@ -15,10 +15,14 @@ use constant TEST_DIR => $FindBin::Bin . '/test_data/';
 my $initial_wg0 = read_file(TEST_DIR . 'mini_wg0.conf');
 my $initial_wg1 = read_file(TEST_DIR . 'mini_wg1.conf');
 
+my $unknown_handler = sub($attribute, $value) {
+    # Since unknown attribute handling is tested separately, we can safely ignore it
+    return $attribute, $value;
+};
 
 my $wg_meta = Wireguard::WGmeta::Wrapper::Config->new(TEST_DIR);
 
-$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'bli_blu');
+$wg_meta->set('mini_wg0', 'WG_0_PEER_A_PUBLIC_KEY', 'name', 'bli_blu', $unknown_handler);
 $wg_meta->commit(0,1);
 
 $wg_meta->may_reload_from_disk('mini_wg0');

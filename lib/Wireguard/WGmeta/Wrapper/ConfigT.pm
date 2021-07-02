@@ -116,7 +116,7 @@ use constant FALSE => 0;
 use constant TRUE => 1;
 use constant INTEGRITY_HASH_SALT => 'wefnwioefh9032ur3';
 
-our $VERSION = "0.0.0"; # do not change manually, this variable is updated when calling make
+our $VERSION = "0.3.0"; # do not change manually, this variable is updated when calling make
 
 =head3 is_valid_interface($interface)
 
@@ -188,16 +188,6 @@ L<Wireguard::WGmeta::Wrapper::Config/get_peer_count([$interface = undef])>
 sub get_peer_count($self, $interface = undef) {
     $self->may_reload_from_disk($interface);
     return $self->SUPER::get_peer_count($interface);
-}
-
-=head3 get_peer_count([$interface])
-
-L<Wireguard::WGmeta::Wrapper::Config/get_interface_fqdn($interface)>
-
-=cut
-sub get_interface_fqdn($self, $interface) {
-    $self->may_reload_from_disk($interface);
-    return $self->SUPER::get_interface_fqdn($interface);
 }
 
 sub _get_all_conf_files($wireguard_home) {

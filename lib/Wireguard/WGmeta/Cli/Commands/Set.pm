@@ -88,7 +88,8 @@ sub _apply_change_set($self, $interface, @change_set) {
 }
 sub cmd_help($self) {
     print "Usage: wg-meta set <interface> [attr1 value1] [attr2 value2] [peer {alias|public-key}] [attr1 value1] [attr2 value2] ...\n\n"
-        . "Notes:\n The interface aims to follow the official `wg set` specification\n";
+        . "Notes:\n The interface aims to follow the official `wg set` specification\n"
+        . "To introduce new attributes prefix them with `+`";
 }
 
 sub _set_values($self, $interface, $identifier, $ref_hash_values) {
