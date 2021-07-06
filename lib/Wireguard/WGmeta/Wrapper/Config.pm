@@ -91,7 +91,9 @@ C<[$custom_attributes]> A reference to a hash defining custom attributes. Expect
             'validator'      => 'Ref to validation function'
         },
         'example'         => {
-            'validator'      => \&accept_any
+            'validator'      => sub ($attr, $value) {
+                return ($attr eq 'example') ? 1 : 0;
+            }
         },
         ...
     }
@@ -149,7 +151,7 @@ C<$interface> Valid interface identifier (e.g 'wg0')
 
 =item *
 
-C<$identifier> Either an interface name, a public-key of a peer or an alias
+C<$identifier> Either an interface name, an alias or public-key of a peer
 
 =item *
 
@@ -164,6 +166,8 @@ Expected signature:
         # Handling of this particular case
         return $attribute, $value;
     }
+
+If not defined, a warning is emitted
 
 =back
 
@@ -200,7 +204,7 @@ B<Returns>
 None
 
 =cut
-sub set($self, $interface, $identifier, $attribute, $value, $unknown_callback = undef, $force = 0) {
+sub set($self, $interface, $identifier, $attribute, $value, $unknown_callback = undef) {
     # Assertions
     die "Undefined value for `$attribute` in interface `$interface` NOT SET" unless defined($value);
     die "Invalid interface name `$interface`" unless $self->is_valid_interface($interface);
@@ -220,6 +224,7 @@ sub set($self, $interface, $identifier, $attribute, $value, $unknown_callback = 
         return;
     }
 
+    # Call attribute validation function
     die "Invalid attribute value `$value` for `$attribute`" unless $self->attr_value_is_valid($attribute, $value);
 
     unless (exists $self->{parsed_config}{$interface}{$identifier}{$attribute}) {
@@ -239,7 +244,7 @@ sub set($self, $interface, $identifier, $attribute, $value, $unknown_callback = 
                     ($attribute, $value) = &{$unknown_callback}($attribute, $value);
                 }
                 else {
-                    warn "Attribute `$attribute` was previously not known on interface `$interface`" if $force == 0;
+                    warn "Attribute `$attribute` was previously not known on interface `$interface`";
                 }
                 $self->{parsed_config}{$interface}{INTERNAL_KEY_PREFIX . 'observed_wg_meta_attrs'}{$attribute} = 1;
             }
@@ -256,7 +261,7 @@ sub set($self, $interface, $identifier, $attribute, $value, $unknown_callback = 
 
 =head3 attr_value_is_valid($attribute, $value, $ref_valid_attrs)
 
-Simply calls the C<validate()> function defined in L<Wireguard::WGmeta::Validator>
+Simply calls the C<validate()> function defined in L<Wireguard::WGmeta::Validator> or C<$custom_attributs>
 
 B<Parameters>
 
@@ -270,18 +275,13 @@ C<$attribute> Attribute name
 
 C<$value> Attribute value
 
-=item
-
-C<$ref_valid_attrs> Reference to the corresponding L<Wireguard::WGmeta::Validator> section.
-
 =back
 
 B<Returns>
 
-True if validation was successful, False if not
+True if validation was successful (or no validator function present), False if not.
 
 =cut
-
 sub attr_value_is_valid($self, $attribute, $value) {
     return &{KNOWN_ATTRIBUTES->{$attribute}{validator}}($value) if exists KNOWN_ATTRIBUTES->{$attribute};
     return &{$self->{custom_attributes}{$attribute}{validator}}($value) if exists $self->{custom_attributes}{$attribute};
@@ -300,7 +300,7 @@ sub _update_alias_map($self, $interface, $identifier, $alias) {
 
 =head3 disable($interface, $identifier)
 
-Disables an interface/peer (by prefixing C<$wg_meta_disabled_prefix>) and setting the wg-meta attribute `Disabled` to C<1>.
+Disables an interface/peer and setting the wg-meta attribute `Disabled` to C<1>.
 
 B<Parameters>
 
@@ -312,7 +312,7 @@ C<$interface> Valid interface name (e.g 'wg0').
 
 =item *
 
-C<$identifier> A valid identifier: If the target section is a peer, this is usually the public key of this peer. If target is an interface,
+C<$identifier> A valid identifier (or alias): If the target section is a peer, this is usually the public key of this peer. If target is an interface,
 its again the interface name.
 
 =back
@@ -369,7 +369,7 @@ sub is_valid_interface($self, $interface) {
 
 =head3 is_valid_alias($interface, $alias)
 
-Simply checks if an alias is valid for spec
+Simply checks if an alias is valid for a given interface
 
 =cut
 sub is_valid_alias($self, $interface, $alias) {
@@ -414,7 +414,7 @@ B<Parameters>
 
 =item
 
-C<$interface> A valid interface name (is not validated)
+C<$interface> A valid interface name
 
 =item
 
@@ -438,7 +438,7 @@ sub try_translate_alias($self, $interface, $may_alias) {
 
 =head3 get_all_conf_files($wireguard_home)
 
-Returns a list of all files in C<$wireguard_home> matching I<r/.*\.conf$/>.
+Returns a list of all files in C<$wireguard_home> matching I</.*\.conf$/>.
 
 B<Parameters>
 
@@ -489,7 +489,6 @@ B<Raises>
 Exception if: Folder or file is not writeable
 
 B<Returns>
-
 
 None
 
@@ -592,7 +591,7 @@ A list of all sections of an interface. If interface is not present, an empty li
 
 =cut
 sub get_section_list($self, $interface) {
-    if (exists $self->{parsed_config}{$interface}) {
+    if ($self->is_valid_interface($interface)) {
         return @{$self->{parsed_config}{$interface}{INTERNAL_KEY_PREFIX . 'section_order'}};
     }
     else {
@@ -831,7 +830,7 @@ sub remove_interface($self, $interface) {
 
 Returns the number of peers.
 
-B<Caveat:> Does return the count represented  in the current (parsed) configuration state.
+B<Caveat:> Does return the count represented in the current (parsed) configuration state.
 
 B<Parameters>
 
@@ -839,7 +838,7 @@ B<Parameters>
 
 =item
 
-C<[$interface = undef]> If defined, only return counts for this specific interface
+C<[$interface = undef]> If defined and valid, only return counts for this specific interface
 
 =back
 
@@ -863,8 +862,8 @@ sub get_peer_count($self, $interface = undef) {
 
 =head3 may_reload_from_disk($interface [, $new = FALSE])
 
-Method to reload an interface configuration from disk. Also useful to add an newly (externally) created
-interface on-the-fly. If a config file with a I<.not_applied> suffix is found (and its mtime is newer
+Method to reload an interface configuration from disk. Also useful to add an new (externally) created
+interface on-the-fly. If a config file with a I<.not_applied> suffix is present (and its mtime is newer
 than the original one), it is taken as source for reloading the configuration data.
 
 B<Parameters>

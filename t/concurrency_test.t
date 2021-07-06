@@ -42,11 +42,18 @@ my %integrity_hashes2 = (
     'WG_1_PEER_A_PUBLIC_KEY' => $wg_meta2->calculate_sha_from_internal('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY')
 );
 $wg_meta2->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2', $unknown_handler);
+# on fast systems the mtime would be identical otherwise...
+usleep(5000);
 $wg_meta2->commit(1, 1, \%integrity_hashes2);
+# on fast systems the mtime would be identical otherwise...
+usleep(5000);
 $wg_meta1->commit(1, 1, \%integrity_hashes1);
 
-ok { $wg_meta2->get_interface_section('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD') }->{name} eq 'Set by instance 1', 'concurrent edit [1]';
-ok { $wg_meta1->get_interface_section('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY') }->{name} eq 'Set by instance 2', 'concurrent edit [2]';
+my %section2 = $wg_meta2->get_interface_section('mini_wg1', 'PUBLIC_KEY_PEER_OUTSIDE_THREAD');
+my %section1 = $wg_meta1->get_interface_section('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY');
+
+ok $section2{name} eq 'Set by instance 1', 'concurrent edit [1]';
+ok $section1{name} eq 'Set by instance 2', 'concurrent edit [2]';
 
 
 # concurrent edit (conflict)
@@ -61,6 +68,8 @@ $wg_meta1->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 1 
 $wg_meta2->set('mini_wg1', 'WG_1_PEER_A_PUBLIC_KEY', 'name', 'Set by instance 2 [2]');
 $wg_meta2->commit(1, 1, \%integrity_hashes2);
 eval {
+    # on fast systems the mtime would be identical otherwise...
+    usleep(5000);
     $wg_meta1->commit(1, 1, \%integrity_hashes1);
 } or ok 1, 'concurrent edit [3]';
 
@@ -69,6 +78,8 @@ eval {
 $wg_meta1->add_peer('mini_wg0', '10.0.5.56/32', 'PUBLIC_KEY_PEER_ADDED_5', 'alias_peer5');
 $wg_meta2->add_peer('mini_wg0', '10.0.5.57/32', 'PUBLIC_KEY_PEER_ADDED_6', 'alias_peer6');
 $wg_meta1->commit(1);
+# on fast systems the mtime would be identical otherwise...
+usleep(5000);
 $wg_meta2->commit(1);
 
 ok $wg_meta1->is_valid_identifier('mini_wg0', 'PUBLIC_KEY_PEER_ADDED_6'), 'the (not) lost peer [1]';
@@ -90,12 +101,16 @@ $wg_meta2->commit(1);
 ok eq_array \@actual, [ 'thread_iface1', 'PEER_IFACE2_PUB_KEY' ], 'add peer to new interface';
 
 $wg_meta1->remove_peer('thread_iface1', 'PEER_IFACE2_PUB_KEY');
+# on fast systems the mtime would be identical otherwise...
+usleep(5000);
 $wg_meta1->commit(1);
 
 @actual = $wg_meta2->get_section_list('thread_iface1');
 ok eq_array \@actual, [ 'thread_iface1' ], 'remove peer from new interface';
 
 $wg_meta2->remove_interface('thread_iface1');
+# on fast systems the mtime would be identical otherwise...
+usleep(5000);
 $wg_meta2->commit(1);
 
 @actual = $wg_meta1->get_interface_list();
