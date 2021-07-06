@@ -1,3 +1,7 @@
+0.3.1 2021-07-06 Tobias Bossert (tobib at cpan.org)
+- Improved doc
+- fix: concurrency test -> added small delay between writes
+
 0.3.0 2021-07-03 Tobias Bossert (tobib at cpan.org)
 - changed: CLI: Seamless support for custom attributes (set and addpeer)
 - added: CLI: Ability to remove peers
