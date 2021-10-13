@@ -118,6 +118,17 @@ PersistentKeepalive = 25
 
 ```
 
+
+## Migrating from `0.2.x`
+
+With the introduction of version `0.3.x`, the way custom attributes work has slightly changed:
+
+- There is no "in-config" name for custom attributes anymore, they are written down as initially defined.
+- All predefined custom attributes like `name` and `description` have been removed (an exception is the `alias` attribute). To use
+your own custom attributes, register them using `WGmeta::Wrapper::Config->new([..], $custom_attributes)` or when using the CLI interface, by prefixing them with `+`. 
+  As a consequence `WGmeta::Wrapper::Config->add_peer()` has no `name` parameter anymore, set additional attributes by calling `WGmeta::Wrapper::Config->set()`
+  
+
 ## Under the hood
 
 The main advantage is that this tool is not dependent on any other storage, metadata is stored inside the corresponding
