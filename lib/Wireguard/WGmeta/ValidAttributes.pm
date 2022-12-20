@@ -179,7 +179,7 @@ use constant KNOWN_ATTRIBUTES => {
         'validator'      => \&accept_any
     },
     'persistent-keepalive' => {
-        'in_config_name' => 'PresistentKeepalive',
+        'in_config_name' => 'PersistentKeepalive',
         'type'           => ATTR_TYPE_IS_WG_ORIG_PEER,
         'validator'      => \&accept_any
     },

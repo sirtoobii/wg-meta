@@ -1,9 +1,10 @@
-0.3.2 2022-12-20 11:07:44 +0100 Tobias Bossert <bossert@oetiker.ch>
-
- -
-
-0.3.2 2022-12-20 Tobias Bossert (tobib at cpan.org)
+0.3.3 2022-12-20 Tobias Bossert (tobib at cpan.org)
 - Fixed dead lock in some situations when a reload callback is called
+
+0.3.2 2021-12-10 Tobias Bossert (tobib at cpan.org)
+- added: CLI: Support for DNS hostname and endpoint FQDN
+- changed: CLI: wg-meta show output is now easier to read
+- fix: PresistentKeepalive -> PersistentKeepalive Resolves #15
 
 0.3.1 2021-07-06 Tobias Bossert (tobib at cpan.org)
 - Improved doc
