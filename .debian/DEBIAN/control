@@ -1,10 +1,10 @@
 Package: wg-meta
-Version: 0.3.2
+Version: 0.3.3
 Section: base
 Priority: optional
 Architecture: all
 Maintainer: Tobias <tobib@cpan.org>
 Homepage: https://github.com/sirtoobii/wg-meta
-Depends: wireguard (>= 1.0.20200827-1~~), perl-base (>=5.22)
+Depends: wireguard (>= 0.3.30200827-1~~), perl-base (>=5.22)
 Recommends: bash
 Description: An approach to add meta-data to the main Wireguard config
