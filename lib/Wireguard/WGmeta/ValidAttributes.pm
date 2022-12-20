@@ -27,7 +27,7 @@ use experimental 'signatures';
 
 use Wireguard::WGmeta::Validator;
 
-our $VERSION = "0.3.1";
+our $VERSION = "0.3.2";
 
 =head1 ATTRIBUTE TYPES
 

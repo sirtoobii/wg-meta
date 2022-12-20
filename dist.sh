@@ -1,4 +1,4 @@
-#!/bin/sh
+cd#!/bin/sh
 
 VERSION=`cat VERSION`
 

@@ -1,3 +1,10 @@
+0.3.2 2022-12-20 11:07:44 +0100 Tobias Bossert <bossert@oetiker.ch>
+
+ -
+
+0.3.2 2022-12-20 Tobias Bossert (tobib at cpan.org)
+- Fixed dead lock in some situations when a reload callback is called
+
 0.3.1 2021-07-06 Tobias Bossert (tobib at cpan.org)
 - Improved doc
 - fix: concurrency test -> added small delay between writes
