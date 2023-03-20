@@ -99,7 +99,7 @@ is stored (and written back) as they appear in Config.
 
 =item *
 
-This method can be used as stand-alone in conjunction with the L<>
+This method can be used as stand-alone in conjunction with the L</create_wg_config2($ref_interface_config [, $wg_meta_prefix, $disabled_prefix, $no_checksum])>
 
 =item *
 

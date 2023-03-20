@@ -7,7 +7,7 @@ wg-meta - CLI interface to manage Wireguard using Perl
 =head1 DESCRIPTION
 
 This CLI interface is a (possible) implementation of L<Wireguard::WGmeta::Wrapper::Show> and L<Wireguard::WGmeta::Wrapper::Config>.
-An you don't know the best yet: It's fully compatible with your existing setup (if not let me know!)
+And you don't know the best yet: It's fully compatible with your existing setup (if not let me know!)
 
 =head1 SYNOPSIS
 
@@ -99,7 +99,7 @@ S<Tobias Bossert E<lt>tobib at cpan.orgE<gt>>
 
 MIT License
 
-Copyright (c) 2021 Tobias Bossert
+Copyright (c) 2023 Tobias Bossert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

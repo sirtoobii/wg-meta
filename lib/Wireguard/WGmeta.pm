@@ -40,7 +40,7 @@ L<OETIKER+PARTNER AG|https://www.oetiker.ch/> for sponsoring this project.
 
 MIT License
 
-Copyright (c) 2021 Tobias Bossert
+Copyright (c) 2023 Tobias Bossert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

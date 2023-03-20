@@ -35,7 +35,6 @@ t/cli_test.t
 t/concurrency_test.t
 t/Data/wg0.conf
 t/Data/wg1.conf
-t/Data/wg2.conf
 t/Data/wg_show_dummy
 t/test_data/empty.conf
 t/test_data/mini_wg0.conf
